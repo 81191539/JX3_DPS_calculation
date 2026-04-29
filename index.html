@@ -1,0 +1,1000 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>天策 DPS 计算器</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f6f7f9;
+      --surface: #ffffff;
+      --line: #d7dce3;
+      --text: #1d2430;
+      --muted: #647184;
+      --accent: #0f766e;
+      --accent-strong: #115e59;
+      --warn: #b45309;
+      --bad: #b91c1c;
+      --good-bg: #dbeafe;
+      --bar: #7c3aed;
+      --radius: 8px;
+      font-family: "Microsoft YaHei", "Segoe UI", Arial, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 14px;
+      line-height: 1.45;
+    }
+
+    header {
+      border-bottom: 1px solid var(--line);
+      background: var(--surface);
+    }
+
+    .topbar {
+      max-width: 1380px;
+      margin: 0 auto;
+      padding: 14px 20px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 16px;
+      align-items: center;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: 0;
+    }
+
+    .subtitle {
+      color: var(--muted);
+      margin-top: 2px;
+      font-size: 13px;
+    }
+
+    .toolbar {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    button {
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: var(--surface);
+      color: var(--text);
+      padding: 8px 11px;
+      font: inherit;
+      cursor: pointer;
+      min-height: 36px;
+    }
+
+    button:hover { border-color: var(--accent); }
+
+    button.primary {
+      background: var(--accent);
+      color: #ffffff;
+      border-color: var(--accent);
+    }
+
+    button.primary:hover {
+      background: var(--accent-strong);
+      border-color: var(--accent-strong);
+    }
+
+    main {
+      max-width: 1380px;
+      margin: 0 auto;
+      padding: 18px 20px 28px;
+      display: grid;
+      grid-template-columns: minmax(340px, 440px) minmax(0, 1fr);
+      gap: 18px;
+    }
+
+    section {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+    }
+
+    .inputs, .outputs {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .panel {
+      padding: 14px;
+    }
+
+    .panel h2 {
+      margin: 0 0 12px;
+      font-size: 15px;
+      letter-spacing: 0;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    label {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    input, select {
+      width: 100%;
+      min-height: 34px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 7px 8px;
+      color: var(--text);
+      background: #ffffff;
+      font: inherit;
+    }
+
+    input:focus, select:focus {
+      outline: 2px solid rgba(15, 118, 110, 0.18);
+      border-color: var(--accent);
+    }
+
+    .status {
+      min-height: 22px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .status.error { color: var(--bad); }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .metric {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 12px;
+      background: #fbfcfe;
+      min-width: 0;
+    }
+
+    .metric .label {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .metric .value {
+      margin-top: 3px;
+      font-size: 24px;
+      font-weight: 700;
+      overflow-wrap: anywhere;
+    }
+
+    .metric .value.small {
+      font-size: 18px;
+    }
+
+    .panel-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 8px 12px;
+    }
+
+    .kv {
+      min-width: 0;
+      border-bottom: 1px solid #edf0f4;
+      padding-bottom: 6px;
+    }
+
+    .kv .k {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .kv .v {
+      margin-top: 2px;
+      font-weight: 600;
+      overflow-wrap: anywhere;
+    }
+
+    .table-wrap {
+      overflow: auto;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 760px;
+      background: #ffffff;
+    }
+
+    th, td {
+      padding: 9px 10px;
+      border-bottom: 1px solid #edf0f4;
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    th {
+      color: var(--muted);
+      font-weight: 600;
+      background: #f9fafb;
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+
+    th:first-child, td:first-child { text-align: left; }
+    tr:last-child td { border-bottom: 0; }
+
+    .ratio-cell {
+      min-width: 150px;
+    }
+
+    .ratio-track {
+      height: 8px;
+      background: #eceff4;
+      border-radius: 999px;
+      overflow: hidden;
+      margin-top: 4px;
+    }
+
+    .ratio-bar {
+      height: 100%;
+      background: var(--bar);
+      width: 0;
+    }
+
+    .skill-counts {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .footnote {
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 10px;
+    }
+
+    @media (max-width: 980px) {
+      .topbar, main {
+        grid-template-columns: 1fr;
+      }
+
+      .toolbar {
+        justify-content: flex-start;
+      }
+
+      main {
+        padding: 14px;
+      }
+
+      .metrics, .panel-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 560px) {
+      .grid, .skill-counts, .metrics, .panel-grid {
+        grid-template-columns: 1fr;
+      }
+
+      h1 { font-size: 20px; }
+      .metric .value { font-size: 21px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="topbar">
+      <div>
+        <h1>天策 DPS 计算器</h1>
+        <div class="subtitle">离线单页版，默认载入 sample_134，可直接编辑并重新计算。</div>
+      </div>
+      <div class="toolbar" aria-label="操作">
+        <button type="button" class="primary" id="calculateBtn" title="按当前输入计算">= 计算</button>
+        <button type="button" id="resetBtn" title="恢复 sample_134 默认值">↺ 重置</button>
+        <button type="button" id="exportBtn" title="导出当前输入配置">⇩ 导出 JSON</button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div class="inputs">
+      <section class="panel">
+        <h2>基础面板</h2>
+        <div class="grid" id="panelInputs"></div>
+      </section>
+
+      <section class="panel">
+        <h2>目标与时间</h2>
+        <div class="grid">
+          <label>目标等级
+            <select id="target_level"></select>
+          </label>
+          <label>战斗时长
+            <input id="duration" inputmode="decimal" autocomplete="off">
+          </label>
+          <label>等级减伤
+            <input id="level_reduction" inputmode="decimal" autocomplete="off">
+          </label>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>傲血与全局增益</h2>
+        <div class="grid" id="buffInputs"></div>
+      </section>
+
+      <section class="panel">
+        <h2>技能次数</h2>
+        <div class="skill-counts" id="countInputs"></div>
+      </section>
+    </div>
+
+    <div class="outputs">
+      <section class="panel">
+        <div id="status" class="status">等待计算</div>
+        <div class="metrics">
+          <div class="metric">
+            <div class="label">DPS</div>
+            <div class="value" id="dpsOut">-</div>
+          </div>
+          <div class="metric">
+            <div class="label">总伤害</div>
+            <div class="value small" id="totalOut">-</div>
+          </div>
+          <div class="metric">
+            <div class="label">无视后防御减伤</div>
+            <div class="value small" id="defenseOut">-</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>最终面板</h2>
+        <div class="panel-grid" id="finalPanel"></div>
+      </section>
+
+      <section class="panel">
+        <h2>技能分解</h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>技能</th>
+                <th>次数</th>
+                <th>不会心贡献</th>
+                <th>会心贡献</th>
+                <th>总伤害</th>
+                <th>占比</th>
+              </tr>
+            </thead>
+            <tbody id="breakdownBody"></tbody>
+          </table>
+        </div>
+        <div class="footnote">当前前端复刻已有公式，真实准确性以后续木桩日志校准为准。</div>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    (function () {
+      "use strict";
+
+      const CRITICAL_STRIKE_SCALE = 225946.1;
+      const CRITICAL_EFFECT_SCALE = 72846.14;
+      const OVERCOME_SCALE = 225946.1;
+      const STRAIN_SCALE = 133328.82;
+      const DEFAULT_TARGET_LEVEL = 134;
+      const DEFAULT_DURATION = 180.0;
+      const DEFAULT_LEVEL_REDUCTION = 0.0;
+      const BASE_STRENGTH_TO_PHYSICAL_AP = 0.15;
+      const TIANCE_EXTRA_STRENGTH_TO_PHYSICAL_AP = 1.8;
+      const BASE_STRENGTH_TO_PHYSICAL_OVERCOME = 0.28;
+      const TIANCE_EXTRA_STRENGTH_TO_PHYSICAL_OVERCOME = 0.28;
+
+      const DEFENSE_COF = {
+        131: [44291.70, 11073],
+        132: [46582.65, 15528],
+        133: [48873.60, 26317],
+        134: [155408.88, 83679]
+      };
+
+      const DEFAULT_PANEL = {
+        strength: 12873,
+        base_physical_attack_power: 47035,
+        weapon_damage: 10616,
+        crit_rating: 35850,
+        crit_effect_rating: 8437,
+        base_overcome_rating: 57261,
+        strain_rating: 88736,
+        counter_value: 31107,
+        target_level: DEFAULT_TARGET_LEVEL
+      };
+
+      const DEFAULT_ROTATION_COUNTS = {
+        long_ya: 58,
+        long_ya_counter: 58,
+        liu_xue_tick: 112,
+        li_po_wj: 6,
+        mie: 19,
+        pi_li: 20,
+        chuan_yun_1: 15,
+        chuan_yun_1_counter: 15,
+        chuan_yun_2: 14,
+        chuan_yun_2_counter: 14,
+        long_yin: 30
+      };
+
+      const DEFAULT_AOXUE_WU_BUFF = {
+        vs_non_player_kd: 0.65,
+        ignore_def_pct: 0.60,
+        strain_gain_add: 0.00,
+        flat_ap_add: 0,
+        ap_gain_add: 0.0
+      };
+
+      const DEFAULT_GLOBAL_EFFECTS = {
+        global_crit_gain: 0.25,
+        global_kb_gain: 0.10,
+        global_kc_gain: 0.35,
+        ap_gain_add: 0.05
+      };
+
+      const SKILL_SPECS = {
+        chuan_yun_1: { attack_power_cof: 1.84, weapon_damage_cof: 1.00 },
+        chuan_yun_2: { attack_power_cof: 2.25, weapon_damage_cof: 1.00 },
+        pi_li: { attack_power_cof: 5.03, weapon_damage_cof: 2.00 },
+        long_yin: { attack_power_cof: 2.79, weapon_damage_cof: 1.00 },
+        mie: { attack_power_cof: 4.51, weapon_damage_cof: 2.00 },
+        long_ya: { attack_power_cof: 3.00, weapon_damage_cof: 1.00, k_b: 1.05 },
+        li_po_wj: { attack_power_cof: 11.36, weapon_damage_cof: 4.00, k_b: 0.60, critical_strike: 0.25 },
+        liu_xue_tick: { attack_power_cof: 3.15 },
+        chuan_yun_1_counter: { kind: "counter", counter_cof: 1.10 },
+        chuan_yun_2_counter: { kind: "counter", counter_cof: 11.35 },
+        long_ya_counter: { kind: "counter", counter_cof: 1.80 }
+      };
+
+      const PANEL_FIELDS = [
+        ["strength", "力道"],
+        ["base_physical_attack_power", "基础外功攻击"],
+        ["weapon_damage", "武器伤害"],
+        ["crit_rating", "会心评级"],
+        ["crit_effect_rating", "会效评级"],
+        ["base_overcome_rating", "基础破防评级"],
+        ["strain_rating", "无双评级"],
+        ["counter_value", "破招值"]
+      ];
+
+      const BUFF_FIELDS = [
+        ["aoxue.vs_non_player_kd", "对非侠士伤害"],
+        ["aoxue.ignore_def_pct", "无视防御"],
+        ["aoxue.strain_gain_add", "姿态无双"],
+        ["aoxue.flat_ap_add", "固定外功攻击"],
+        ["aoxue.ap_gain_add", "姿态攻击增益"],
+        ["global.global_crit_gain", "全局会心"],
+        ["global.global_kb_gain", "B 乘区"],
+        ["global.global_kc_gain", "C 乘区"],
+        ["global.ap_gain_add", "全局攻击增益"]
+      ];
+
+      const SKILL_LABELS = {
+        chuan_yun_1: "穿云一",
+        chuan_yun_2: "穿云二",
+        pi_li: "霹雳",
+        long_yin: "龙吟",
+        mie: "灭",
+        long_ya: "龙牙",
+        li_po_wj: "力破万钧",
+        liu_xue_tick: "流血每跳",
+        chuan_yun_1_counter: "穿云一破招",
+        chuan_yun_2_counter: "穿云二破招",
+        long_ya_counter: "龙牙破招"
+      };
+
+      function parseNumber(value, fieldName) {
+        const raw = String(value ?? "").trim();
+        if (!raw) {
+          throw new Error(fieldName + " 不能为空");
+        }
+        const normalized = raw.replace(/,/g, "");
+        const parsed = Number(normalized.endsWith("%") ? normalized.slice(0, -1) : normalized);
+        if (!Number.isFinite(parsed)) {
+          throw new Error(fieldName + " 必须是数字");
+        }
+        return parsed;
+      }
+
+      function parsePercent(value, fieldName) {
+        const raw = String(value ?? "").trim();
+        const hasPercent = raw.endsWith("%");
+        const parsed = parseNumber(raw, fieldName);
+        if (hasPercent || Math.abs(parsed) > 1) {
+          return parsed / 100;
+        }
+        return parsed;
+      }
+
+      function pctInput(value) {
+        return String(value);
+      }
+
+      function clone(value) {
+        return JSON.parse(JSON.stringify(value));
+      }
+
+      function buildDefaultConfig() {
+        return {
+          panel: clone(DEFAULT_PANEL),
+          counts: clone(DEFAULT_ROTATION_COUNTS),
+          duration: DEFAULT_DURATION,
+          level_reduction: DEFAULT_LEVEL_REDUCTION,
+          aoxue: clone(DEFAULT_AOXUE_WU_BUFF),
+          global: clone(DEFAULT_GLOBAL_EFFECTS)
+        };
+      }
+
+      function buildAttribute(panel) {
+        const level = Number(panel.target_level);
+        if (!Object.prototype.hasOwnProperty.call(DEFENSE_COF, level)) {
+          throw new Error("不支持的目标等级：" + level);
+        }
+        const defense = DEFENSE_COF[level];
+        const attr = {
+          base_agility: 0,
+          agility_gain: 1,
+          base_strength: Number(panel.strength),
+          strength_gain: 1,
+          base_physical_attack_power: Number(panel.base_physical_attack_power),
+          physical_attack_power_gain: 1,
+          base_physical_critical_strike: Number(panel.crit_rating ?? 0),
+          physical_critical_strike_gain: 0,
+          base_physical_critical_effect: Number(panel.crit_effect_rating ?? 0),
+          physical_critical_effect_gain: 0,
+          base_physical_overcome: Number(panel.base_overcome_rating ?? 0),
+          physical_overcome_gain: 1,
+          base_strain: Number(panel.strain_rating ?? 0),
+          strain_gain: 0,
+          weapon_damage: Number(panel.weapon_damage),
+          counter: Number(panel.counter_value ?? 0),
+          ignore_defense: 0,
+          target_level: level,
+          defense_scale: defense[0],
+          target_defense: defense[1]
+        };
+        return attr;
+      }
+
+      function strength(attr) {
+        return attr.base_strength * attr.strength_gain;
+      }
+
+      function attackPower(attr) {
+        return attr.base_physical_attack_power * attr.physical_attack_power_gain
+          + strength(attr) * BASE_STRENGTH_TO_PHYSICAL_AP
+          + strength(attr) * TIANCE_EXTRA_STRENGTH_TO_PHYSICAL_AP;
+      }
+
+      function criticalStrike(attr) {
+        return attr.base_physical_critical_strike / CRITICAL_STRIKE_SCALE
+          + attr.physical_critical_strike_gain
+          + attr.base_agility * attr.agility_gain * 0.64;
+      }
+
+      function criticalEffect(attr) {
+        return 1.75 + attr.base_physical_critical_effect / CRITICAL_EFFECT_SCALE + attr.physical_critical_effect_gain;
+      }
+
+      function overcome(attr) {
+        return (attr.base_physical_overcome + strength(attr) * BASE_STRENGTH_TO_PHYSICAL_OVERCOME) / OVERCOME_SCALE * attr.physical_overcome_gain
+          + strength(attr) * TIANCE_EXTRA_STRENGTH_TO_PHYSICAL_OVERCOME / OVERCOME_SCALE;
+      }
+
+      function strain(attr) {
+        return attr.base_strain / STRAIN_SCALE + attr.strain_gain;
+      }
+
+      function buildSkills() {
+        const skills = {};
+        Object.keys(SKILL_SPECS).forEach((key) => {
+          const spec = Object.assign({
+            kind: "skill",
+            base_damage: 0,
+            weapon_damage_cof: 0,
+            attack_power_cof: 0,
+            times: 1,
+            k_b: 0,
+            k_c: 0,
+            k_d: 0,
+            increasing_k_b: 0,
+            increasing_k_c: 0,
+            increasing_k_d: 0,
+            ignore_defense: 0,
+            critical_strike: 0,
+            critical_effect: 0,
+            counter_cof: 0
+          }, SKILL_SPECS[key]);
+          skills[key] = spec;
+        });
+        return skills;
+      }
+
+      function applyAoxueWu(attr, skills, buff) {
+        attr.base_physical_attack_power += Number(buff.flat_ap_add);
+        attr.strain_gain += Number(buff.strain_gain_add);
+        attr.ignore_defense += Number(buff.ignore_def_pct);
+        attr.physical_attack_power_gain += Number(buff.ap_gain_add);
+        Object.values(skills).forEach((skill) => {
+          skill.k_d += Number(buff.vs_non_player_kd);
+        });
+      }
+
+      function applyGlobalEffects(attr, skills, buff) {
+        attr.physical_critical_strike_gain += Number(buff.global_crit_gain);
+        attr.physical_attack_power_gain += Number(buff.ap_gain_add);
+        Object.values(skills).forEach((skill) => {
+          skill.k_b += Number(buff.global_kb_gain);
+          skill.k_c += Number(buff.global_kc_gain);
+        });
+      }
+
+      function skillBreakdown(attr, skill) {
+        let totalNoncrit = 0;
+        let totalCrit = 0;
+        let incB = 0;
+        let incC = 0;
+        let incD = 0;
+        for (let i = 0; i < Number(skill.times || 1); i += 1) {
+          const crit = criticalStrike(attr) + Number(skill.critical_strike || 0);
+          const cfx = criticalEffect(attr) + Number(skill.critical_effect || 0);
+          const targetDef = Math.max(0, attr.target_defense * (1 - Number(skill.ignore_defense || 0) - attr.ignore_defense));
+          const defenseRate = targetDef / (attr.defense_scale + targetDef);
+          const kB = Number(skill.k_b || 0) + incB;
+          const kC = Number(skill.k_c || 0) + incC;
+          const kD = Number(skill.k_d || 0) + incD;
+          let base = 0;
+          if (skill.kind === "counter") {
+            base = attr.counter * Number(skill.counter_cof || 0);
+          } else {
+            base = Number(skill.base_damage || 0)
+              + attackPower(attr) * Number(skill.attack_power_cof || 0)
+              + attr.weapon_damage * Number(skill.weapon_damage_cof || 0);
+          }
+          base *= (1 + kB) * (1 + kC) * (1 + kD);
+          base *= (1 + overcome(attr)) * (1 + strain(attr));
+          const hit = base * (1 - defenseRate);
+          const critDamage = hit * cfx;
+          totalNoncrit += hit * (1 - crit);
+          totalCrit += critDamage * crit;
+          incB += Number(skill.increasing_k_b || 0);
+          incC += Number(skill.increasing_k_c || 0);
+          incD += Number(skill.increasing_k_d || 0);
+        }
+        return [totalNoncrit, totalCrit, totalNoncrit + totalCrit];
+      }
+
+      function summarizeFinalPanel(attr) {
+        const critRate = criticalStrike(attr);
+        const critEff = criticalEffect(attr);
+        const ov = overcome(attr);
+        const st = strain(attr);
+        const effectiveTargetDefense = Math.max(0, attr.target_defense * (1 - attr.ignore_defense));
+        const defenseRate = effectiveTargetDefense / (attr.defense_scale + effectiveTargetDefense);
+        return {
+          level: attr.target_level,
+          strength: strength(attr),
+          base_physical_ap: attr.base_physical_attack_power,
+          ap_gain: attr.physical_attack_power_gain,
+          attack_power_total: attackPower(attr),
+          weapon_damage: attr.weapon_damage,
+          crit_rate: critRate,
+          crit_rating_equiv: critRate * CRITICAL_STRIKE_SCALE,
+          crit_effect_total: critEff,
+          crit_effect_rating_equiv: (critEff - 1.75) * CRITICAL_EFFECT_SCALE,
+          overcome_rate: ov,
+          overcome_rating_equiv: ov * OVERCOME_SCALE,
+          strain_rate: st,
+          strain_rating_equiv: st * STRAIN_SCALE,
+          ignore_defense: attr.ignore_defense,
+          target_defense: attr.target_defense,
+          defense_scale: attr.defense_scale,
+          defense_rate_after_ignore: defenseRate
+        };
+      }
+
+      function evaluateConfig(config) {
+        const attr = buildAttribute(config.panel);
+        const skills = buildSkills();
+        applyAoxueWu(attr, skills, config.aoxue);
+        applyGlobalEffects(attr, skills, config.global);
+        const rows = [];
+        let grand = 0;
+        Object.keys(config.counts).forEach((key) => {
+          const count = Math.trunc(Number(config.counts[key]));
+          if (count <= 0) return;
+          if (!skills[key]) {
+            throw new Error("未知技能：" + key);
+          }
+          const parts = skillBreakdown(attr, skills[key]);
+          const row = {
+            skill: key,
+            count,
+            noncrit: parts[0] * count,
+            crit: parts[1] * count,
+            total: parts[2] * count,
+            ratio: 0
+          };
+          grand += row.total;
+          rows.push(row);
+        });
+        rows.forEach((row) => {
+          row.ratio = grand === 0 ? 0 : row.total / grand;
+        });
+        rows.sort((a, b) => b.total - a.total);
+        const dps = grand / Number(config.duration) * (1 - Number(config.level_reduction));
+        return {
+          name: "frontend",
+          duration: Number(config.duration),
+          level_reduction: Number(config.level_reduction),
+          panel: summarizeFinalPanel(attr),
+          total_damage: grand,
+          dps,
+          skill_totals: Object.fromEntries(rows.map((row) => [row.skill, row.total])),
+          skill_ratios: Object.fromEntries(rows.map((row) => [row.skill, row.ratio])),
+          breakdown: rows
+        };
+      }
+
+      function formatNumber(value, digits) {
+        return Number(value).toLocaleString("zh-CN", {
+          minimumFractionDigits: digits,
+          maximumFractionDigits: digits
+        });
+      }
+
+      function formatPercent(value) {
+        return (Number(value) * 100).toLocaleString("zh-CN", {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        }) + "%";
+      }
+
+      function inputId(key) {
+        return "input_" + key.replace(/\./g, "_");
+      }
+
+      function makeField(container, key, label, value) {
+        const wrapper = document.createElement("label");
+        wrapper.textContent = label;
+        const input = document.createElement("input");
+        input.id = inputId(key);
+        input.autocomplete = "off";
+        input.inputMode = "decimal";
+        input.value = String(value);
+        wrapper.appendChild(input);
+        container.appendChild(wrapper);
+      }
+
+      function initForm() {
+        const panelContainer = document.getElementById("panelInputs");
+        PANEL_FIELDS.forEach(([key, label]) => makeField(panelContainer, "panel." + key, label, DEFAULT_PANEL[key]));
+
+        const targetSelect = document.getElementById("target_level");
+        Object.keys(DEFENSE_COF).forEach((level) => {
+          const option = document.createElement("option");
+          option.value = level;
+          option.textContent = level;
+          targetSelect.appendChild(option);
+        });
+        targetSelect.value = String(DEFAULT_TARGET_LEVEL);
+        document.getElementById("duration").value = String(DEFAULT_DURATION);
+        document.getElementById("level_reduction").value = String(DEFAULT_LEVEL_REDUCTION);
+
+        const buffContainer = document.getElementById("buffInputs");
+        BUFF_FIELDS.forEach(([key, label]) => {
+          const source = key.startsWith("aoxue.") ? DEFAULT_AOXUE_WU_BUFF : DEFAULT_GLOBAL_EFFECTS;
+          const shortKey = key.split(".")[1];
+          makeField(buffContainer, key, label, source[shortKey]);
+        });
+
+        const countContainer = document.getElementById("countInputs");
+        Object.keys(DEFAULT_ROTATION_COUNTS).forEach((key) => {
+          makeField(countContainer, "counts." + key, SKILL_LABELS[key] || key, DEFAULT_ROTATION_COUNTS[key]);
+        });
+      }
+
+      function readConfigFromForm() {
+        const panel = {};
+        PANEL_FIELDS.forEach(([key, label]) => {
+          panel[key] = parseNumber(document.getElementById(inputId("panel." + key)).value, label);
+        });
+        panel.target_level = parseNumber(document.getElementById("target_level").value, "目标等级");
+
+        const config = {
+          panel,
+          counts: {},
+          duration: parseNumber(document.getElementById("duration").value, "战斗时长"),
+          level_reduction: parsePercent(document.getElementById("level_reduction").value, "等级减伤"),
+          aoxue: {},
+          global: {}
+        };
+
+        if (config.duration <= 0) {
+          throw new Error("战斗时长必须大于 0");
+        }
+        if (config.level_reduction < 0 || config.level_reduction >= 1) {
+          throw new Error("等级减伤应在 0 到 1 之间");
+        }
+
+        BUFF_FIELDS.forEach(([key, label]) => {
+          const group = key.startsWith("aoxue.") ? "aoxue" : "global";
+          const shortKey = key.split(".")[1];
+          const parser = shortKey === "flat_ap_add" ? parseNumber : parsePercent;
+          config[group][shortKey] = parser(document.getElementById(inputId(key)).value, label);
+        });
+
+        Object.keys(DEFAULT_ROTATION_COUNTS).forEach((key) => {
+          const parsed = parseNumber(document.getElementById(inputId("counts." + key)).value, SKILL_LABELS[key] || key);
+          if (parsed < 0) {
+            throw new Error((SKILL_LABELS[key] || key) + " 次数不能小于 0");
+          }
+          config.counts[key] = Math.trunc(parsed);
+        });
+        return config;
+      }
+
+      function setFormFromConfig(config) {
+        PANEL_FIELDS.forEach(([key]) => {
+          document.getElementById(inputId("panel." + key)).value = String(config.panel[key]);
+        });
+        document.getElementById("target_level").value = String(config.panel.target_level);
+        document.getElementById("duration").value = String(config.duration);
+        document.getElementById("level_reduction").value = pctInput(config.level_reduction);
+        BUFF_FIELDS.forEach(([key]) => {
+          const group = key.startsWith("aoxue.") ? "aoxue" : "global";
+          const shortKey = key.split(".")[1];
+          document.getElementById(inputId(key)).value = String(config[group][shortKey]);
+        });
+        Object.keys(DEFAULT_ROTATION_COUNTS).forEach((key) => {
+          document.getElementById(inputId("counts." + key)).value = String(config.counts[key]);
+        });
+      }
+
+      function renderResult(result) {
+        document.getElementById("dpsOut").textContent = formatNumber(result.dps, 2);
+        document.getElementById("totalOut").textContent = formatNumber(result.total_damage, 1);
+        document.getElementById("defenseOut").textContent = formatPercent(result.panel.defense_rate_after_ignore);
+
+        const panelItems = [
+          ["等级", result.panel.level],
+          ["力道", formatNumber(result.panel.strength, 2)],
+          ["基础外功", formatNumber(result.panel.base_physical_ap, 2)],
+          ["总外功", formatNumber(result.panel.attack_power_total, 2)],
+          ["武伤", formatNumber(result.panel.weapon_damage, 2)],
+          ["会心", formatPercent(result.panel.crit_rate)],
+          ["会效", formatNumber(result.panel.crit_effect_total, 4)],
+          ["破防", formatPercent(result.panel.overcome_rate)],
+          ["无双", formatPercent(result.panel.strain_rate)],
+          ["无视防御", formatPercent(result.panel.ignore_defense)],
+          ["目标防御", formatNumber(result.panel.target_defense, 2)],
+          ["防御系数", formatNumber(result.panel.defense_scale, 2)]
+        ];
+        const panelContainer = document.getElementById("finalPanel");
+        panelContainer.innerHTML = "";
+        panelItems.forEach(([key, value]) => {
+          const item = document.createElement("div");
+          item.className = "kv";
+          item.innerHTML = "<div class=\"k\"></div><div class=\"v\"></div>";
+          item.querySelector(".k").textContent = key;
+          item.querySelector(".v").textContent = String(value);
+          panelContainer.appendChild(item);
+        });
+
+        const body = document.getElementById("breakdownBody");
+        body.innerHTML = "";
+        result.breakdown.forEach((row) => {
+          const tr = document.createElement("tr");
+          const ratioPct = row.ratio * 100;
+          tr.innerHTML = [
+            "<td></td>",
+            "<td></td>",
+            "<td></td>",
+            "<td></td>",
+            "<td></td>",
+            "<td class=\"ratio-cell\"><div></div><div class=\"ratio-track\"><div class=\"ratio-bar\"></div></div></td>"
+          ].join("");
+          const cells = tr.querySelectorAll("td");
+          cells[0].textContent = SKILL_LABELS[row.skill] || row.skill;
+          cells[1].textContent = String(row.count);
+          cells[2].textContent = formatNumber(row.noncrit, 1);
+          cells[3].textContent = formatNumber(row.crit, 1);
+          cells[4].textContent = formatNumber(row.total, 1);
+          cells[5].querySelector("div").textContent = formatNumber(ratioPct, 2) + "%";
+          cells[5].querySelector(".ratio-bar").style.width = Math.max(0, Math.min(100, ratioPct)) + "%";
+          body.appendChild(tr);
+        });
+      }
+
+      function calculateAndRender() {
+        const status = document.getElementById("status");
+        try {
+          const config = readConfigFromForm();
+          const result = evaluateConfig(config);
+          renderResult(result);
+          status.className = "status";
+          status.textContent = "已按当前输入计算";
+          return { config, result };
+        } catch (error) {
+          status.className = "status error";
+          status.textContent = error.message;
+          return null;
+        }
+      }
+
+      function exportConfig() {
+        const current = calculateAndRender();
+        if (!current) return;
+        const blob = new Blob([JSON.stringify(current.config, null, 2)], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = "tiance-dps-config.json";
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(url);
+      }
+
+      function init() {
+        initForm();
+        setFormFromConfig(buildDefaultConfig());
+        document.getElementById("calculateBtn").addEventListener("click", calculateAndRender);
+        document.getElementById("resetBtn").addEventListener("click", () => {
+          setFormFromConfig(buildDefaultConfig());
+          calculateAndRender();
+        });
+        document.getElementById("exportBtn").addEventListener("click", exportConfig);
+        document.querySelectorAll("input, select").forEach((field) => {
+          field.addEventListener("change", calculateAndRender);
+        });
+        calculateAndRender();
+      }
+
+      globalThis.TianceDps = {
+        DEFENSE_COF,
+        DEFAULT_PANEL,
+        DEFAULT_ROTATION_COUNTS,
+        DEFAULT_AOXUE_WU_BUFF,
+        DEFAULT_GLOBAL_EFFECTS,
+        SKILL_SPECS,
+        buildDefaultConfig,
+        evaluateConfig
+      };
+
+      if (typeof document !== "undefined") {
+        document.addEventListener("DOMContentLoaded", init);
+      }
+    }());
+  </script>
+</body>
+</html>
