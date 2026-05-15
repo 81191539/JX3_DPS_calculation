@@ -56,6 +56,15 @@ def test_dps_default_has_no_hidden_level_reduction():
     assert tiance_dps.dps_from_total(total, duration=10.0, level_reduction=0.20) == pytest.approx(80.0)
 
 
+def test_haste_tier_controls_fixed_rotation_counts():
+    counts = tiance_dps.get_rotation_counts_for_haste_tier("haste_1")
+
+    assert counts == tiance_dps.DEFAULT_ROTATION_COUNTS
+    assert tiance_dps.CALIBRATION_CASES["sample_134"].haste_tier == "haste_1"
+    with pytest.raises(NotImplementedError, match="二段加速"):
+        tiance_dps.get_rotation_counts_for_haste_tier("haste_2")
+
+
 def test_rotation_breakdown_matches_total_damage_sum():
     case = tiance_dps.CALIBRATION_CASES["sample_134"]
     attr, skills = tiance_dps.build_case_context(case)

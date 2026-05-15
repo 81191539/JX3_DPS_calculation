@@ -88,6 +88,20 @@ DEFAULT_ROTATION_COUNTS = {
     "long_yin": 30,
 }
 
+DEFAULT_HASTE_TIER = "haste_1"
+HASTE_TIER_ROTATION_COUNTS = {
+    "haste_1": {
+        "label": "一段加速",
+        "available": True,
+        "counts": DEFAULT_ROTATION_COUNTS,
+    },
+    "haste_2": {
+        "label": "二段加速（待补）",
+        "available": False,
+        "counts": None,
+    },
+}
+
 DEFAULT_AOXUE_WU_BUFF = {
     "vs_non_player_kd": 0.65,
     "ignore_def_pct": 0.60,
@@ -136,6 +150,7 @@ class GoldenCase:
     name: str
     panel: Mapping[str, float]
     counts: Mapping[str, int]
+    haste_tier: str = DEFAULT_HASTE_TIER
     duration: float = DEFAULT_DURATION
     level_reduction: float = DEFAULT_LEVEL_REDUCTION
     aoxue_wu: Optional[Mapping[str, float]] = None
@@ -150,7 +165,8 @@ CALIBRATION_CASES = {
     "sample_134": GoldenCase(
         name="sample_134",
         panel=DEFAULT_PANEL,
-        counts=DEFAULT_ROTATION_COUNTS,
+        counts=HASTE_TIER_ROTATION_COUNTS[DEFAULT_HASTE_TIER]["counts"],
+        haste_tier=DEFAULT_HASTE_TIER,
         duration=DEFAULT_DURATION,
         level_reduction=DEFAULT_LEVEL_REDUCTION,
         aoxue_wu=DEFAULT_AOXUE_WU_BUFF,
@@ -772,6 +788,17 @@ def dps_from_total(
     return (total / float(duration)) * (1.0 - float(level_reduction))
 
 
+def get_rotation_counts_for_haste_tier(haste_tier: str = DEFAULT_HASTE_TIER) -> Mapping[str, int]:
+    """Return fixed rotation counts for one haste tier."""
+    if haste_tier not in HASTE_TIER_ROTATION_COUNTS:
+        supported = ", ".join(sorted(HASTE_TIER_ROTATION_COUNTS))
+        raise ValueError(f"Unsupported haste_tier={haste_tier}. Supported tiers: {supported}.")
+    config = HASTE_TIER_ROTATION_COUNTS[haste_tier]
+    if not config["available"] or config["counts"] is None:
+        raise NotImplementedError(f"{config['label']} 的技能次数数据待补。")
+    return config["counts"]
+
+
 def build_case_context(case: GoldenCase) -> tuple[TianceAttribute, Dict[str, Skill]]:
     """Build an attribute object and skill table from one calibration case."""
     attr = build_tiance_from_panel(**dict(case.panel))
@@ -791,6 +818,7 @@ def evaluate_case(case: GoldenCase) -> dict:
     rows = rotation_breakdown(attr, skills, case.counts)
     return {
         "name": case.name,
+        "haste_tier": case.haste_tier,
         "duration": float(case.duration),
         "level_reduction": float(case.level_reduction),
         "panel": summarize_final_panel(attr),

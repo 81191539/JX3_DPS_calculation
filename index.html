@@ -6,20 +6,28 @@
   <title>天策 DPS 计算器</title>
   <style>
     :root {
-      color-scheme: light;
-      --bg: #f6f7f9;
-      --surface: #ffffff;
-      --line: #d7dce3;
-      --text: #1d2430;
-      --muted: #647184;
-      --accent: #0f766e;
-      --accent-strong: #115e59;
-      --warn: #b45309;
-      --bad: #b91c1c;
+      color-scheme: dark;
+      --bg: #07111F;
+      --surface: #0F1E33;
+      --surface-alt: #132746;
+      --surface-raised: #182D4D;
+      --line: #204365;
+      --border: rgba(120, 160, 200, 0.24);
+      --border-strong: rgba(120, 200, 220, 0.42);
+      --text: #EAF1F7;
+      --muted: #9AB4CC;
+      --dim: #607A94;
+      --accent: #33C7D9;
+      --accent-strong: #5FD1A5;
+      --success: #22D3A8;
+      --warn: #F2B134;
+      --bad: #F05A5A;
+      --info: #7EA8FF;
       --good-bg: #dbeafe;
-      --bar: #7c3aed;
+      --bar: #33C7D9;
       --radius: 8px;
-      font-family: "Microsoft YaHei", "Segoe UI", Arial, sans-serif;
+      font-family: Bahnschrift, Aptos, "Segoe UI", "Microsoft YaHei", sans-serif;
+      font-variant-numeric: tabular-nums;
     }
 
     * { box-sizing: border-box; }
@@ -28,37 +36,79 @@
       margin: 0;
       background: var(--bg);
       color: var(--text);
-      font-size: 14px;
+      font-size: 13px;
       line-height: 1.45;
     }
 
     header {
-      border-bottom: 1px solid var(--line);
-      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      background: rgba(15, 30, 51, 0.96);
+      position: sticky;
+      top: 0;
+      z-index: 10;
     }
 
     .topbar {
-      max-width: 1380px;
+      max-width: 1680px;
       margin: 0 auto;
-      padding: 14px 20px;
+      padding: 14px 20px 10px;
       display: grid;
       grid-template-columns: 1fr auto;
-      gap: 16px;
-      align-items: center;
+      gap: 12px 16px;
+      align-items: start;
     }
 
     h1 {
       margin: 0;
-      font-size: 22px;
+      font-size: 24px;
       font-weight: 700;
       letter-spacing: 0;
     }
 
     .subtitle {
       color: var(--muted);
-      margin-top: 2px;
-      font-size: 13px;
+      margin-top: 3px;
+      font-size: 12px;
     }
+
+    .system-strip {
+      grid-column: 1 / -1;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+      padding-top: 2px;
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      min-height: 24px;
+      padding: 3px 9px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--surface-alt);
+      color: var(--muted);
+      font-size: 11px;
+      white-space: nowrap;
+    }
+
+    .chip::before {
+      content: "";
+      width: 7px;
+      height: 7px;
+      border-radius: 999px;
+      background: var(--dim);
+    }
+
+    .chip.live {
+      color: var(--text);
+      border-color: rgba(34, 211, 168, 0.45);
+    }
+
+    .chip.live::before { background: var(--success); }
+    .chip.info::before { background: var(--info); }
 
     .toolbar {
       display: flex;
@@ -68,22 +118,26 @@
     }
 
     button {
-      border: 1px solid var(--line);
+      border: 1px solid var(--border);
       border-radius: 6px;
-      background: var(--surface);
+      background: var(--surface-alt);
       color: var(--text);
-      padding: 8px 11px;
+      padding: 8px 12px;
       font: inherit;
       cursor: pointer;
       min-height: 36px;
     }
 
-    button:hover { border-color: var(--accent); }
+    button:hover {
+      border-color: var(--border-strong);
+      background: var(--surface-raised);
+    }
 
     button.primary {
       background: var(--accent);
-      color: #ffffff;
+      color: var(--bg);
       border-color: var(--accent);
+      font-weight: 700;
     }
 
     button.primary:hover {
@@ -92,33 +146,40 @@
     }
 
     main {
-      max-width: 1380px;
+      max-width: 1680px;
       margin: 0 auto;
-      padding: 18px 20px 28px;
+      padding: 12px 20px 28px;
       display: grid;
-      grid-template-columns: minmax(340px, 440px) minmax(0, 1fr);
-      gap: 18px;
+      grid-template-columns: minmax(360px, 430px) minmax(0, 1fr);
+      gap: 12px;
+      align-items: start;
     }
 
     section {
       background: var(--surface);
-      border: 1px solid var(--line);
+      border: 1px solid var(--border);
       border-radius: var(--radius);
     }
 
     .inputs, .outputs {
       display: flex;
       flex-direction: column;
-      gap: 14px;
+      gap: 12px;
+    }
+
+    .outputs > .panel:first-child {
+      border-color: var(--border-strong);
     }
 
     .panel {
-      padding: 14px;
+      padding: 14px 16px;
     }
 
     .panel h2 {
       margin: 0 0 12px;
-      font-size: 15px;
+      color: var(--text);
+      font-size: 16px;
+      font-weight: 700;
       letter-spacing: 0;
     }
 
@@ -128,34 +189,72 @@
       gap: 10px;
     }
 
+    .template-controls {
+      display: grid;
+      grid-template-columns: minmax(120px, 1fr) minmax(140px, 1.2fr);
+      gap: 8px;
+      margin-bottom: 12px;
+      padding: 10px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: rgba(19, 39, 70, 0.58);
+    }
+
+    .template-actions {
+      grid-column: 1 / -1;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+    }
+
     label {
       display: flex;
       flex-direction: column;
       gap: 4px;
       color: var(--muted);
       font-size: 12px;
+      font-weight: 500;
     }
 
     input, select {
       width: 100%;
       min-height: 34px;
-      border: 1px solid var(--line);
+      border: 1px solid var(--border);
       border-radius: 6px;
       padding: 7px 8px;
       color: var(--text);
-      background: #ffffff;
+      background: var(--surface-alt);
       font: inherit;
     }
 
+    input[readonly], input:disabled {
+      background: rgba(19, 39, 70, 0.56);
+      color: var(--dim);
+      cursor: default;
+    }
+
     input:focus, select:focus {
-      outline: 2px solid rgba(15, 118, 110, 0.18);
+      outline: 2px solid rgba(51, 199, 217, 0.18);
       border-color: var(--accent);
     }
 
     .status {
-      min-height: 22px;
-      color: var(--muted);
-      font-size: 13px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 28px;
+      margin-bottom: 10px;
+      color: var(--success);
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .status::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: currentColor;
     }
 
     .status.error { color: var(--bad); }
@@ -163,43 +262,54 @@
     .metrics {
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 10px;
+      gap: 8px;
     }
 
     .metric {
-      border: 1px solid var(--line);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--accent);
       border-radius: var(--radius);
       padding: 12px;
-      background: #fbfcfe;
+      background: var(--surface-alt);
       min-width: 0;
+    }
+
+    .metric:first-child {
+      border-left-color: var(--success);
+      background: var(--surface-raised);
     }
 
     .metric .label {
       color: var(--muted);
       font-size: 12px;
+      font-weight: 500;
     }
 
     .metric .value {
-      margin-top: 3px;
-      font-size: 24px;
+      margin-top: 4px;
+      color: var(--text);
+      font-size: 30px;
       font-weight: 700;
       overflow-wrap: anywhere;
     }
 
     .metric .value.small {
-      font-size: 18px;
+      color: var(--accent);
+      font-size: 22px;
     }
 
     .panel-grid {
       display: grid;
       grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 8px 12px;
+      gap: 8px;
     }
 
     .kv {
       min-width: 0;
-      border-bottom: 1px solid #edf0f4;
-      padding-bottom: 6px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 8px 10px;
+      background: var(--surface-alt);
     }
 
     .kv .k {
@@ -213,9 +323,41 @@
       overflow-wrap: anywhere;
     }
 
+    .explainable {
+      border-bottom: 1px dotted var(--accent);
+      cursor: help;
+      text-underline-offset: 3px;
+    }
+
+    .explainable:focus {
+      outline: 2px solid rgba(51, 199, 217, 0.22);
+      outline-offset: 2px;
+      border-radius: 4px;
+    }
+
+    .formula-tooltip {
+      position: fixed;
+      z-index: 50;
+      max-width: min(560px, calc(100vw - 24px));
+      padding: 10px 12px;
+      border: 1px solid var(--border-strong);
+      border-radius: 8px;
+      background: #091522;
+      color: var(--text);
+      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.34);
+      font-size: 12px;
+      line-height: 1.55;
+      white-space: pre-wrap;
+      pointer-events: none;
+    }
+
+    .formula-tooltip[hidden] {
+      display: none;
+    }
+
     .table-wrap {
       overflow: auto;
-      border: 1px solid var(--line);
+      border: 1px solid var(--border);
       border-radius: var(--radius);
     }
 
@@ -223,12 +365,12 @@
       width: 100%;
       border-collapse: collapse;
       min-width: 760px;
-      background: #ffffff;
+      background: var(--surface);
     }
 
     th, td {
       padding: 9px 10px;
-      border-bottom: 1px solid #edf0f4;
+      border-bottom: 1px solid rgba(32, 67, 101, 0.72);
       text-align: right;
       white-space: nowrap;
     }
@@ -236,7 +378,7 @@
     th {
       color: var(--muted);
       font-weight: 600;
-      background: #f9fafb;
+      background: var(--surface-alt);
       position: sticky;
       top: 0;
       z-index: 1;
@@ -244,6 +386,7 @@
 
     th:first-child, td:first-child { text-align: left; }
     tr:last-child td { border-bottom: 0; }
+    tbody tr:hover { background: rgba(24, 45, 77, 0.62); }
 
     .ratio-cell {
       min-width: 150px;
@@ -251,8 +394,8 @@
 
     .ratio-track {
       height: 8px;
-      background: #eceff4;
-      border-radius: 999px;
+      background: #0A1729;
+      border-radius: 4px;
       overflow: hidden;
       margin-top: 4px;
     }
@@ -266,7 +409,8 @@
     .skill-counts {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 10px;
+      gap: 8px;
+      margin-top: 10px;
     }
 
     .footnote {
@@ -288,18 +432,41 @@
         padding: 14px;
       }
 
+      .outputs {
+        order: -1;
+      }
+
       .metrics, .panel-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
       }
     }
 
     @media (max-width: 560px) {
-      .grid, .skill-counts, .metrics, .panel-grid {
+      .topbar {
+        padding: 12px;
+      }
+
+      .toolbar {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        width: 100%;
+      }
+
+      .toolbar .primary {
+        grid-column: 1 / -1;
+      }
+
+      button {
+        min-height: 44px;
+      }
+
+      .grid, .skill-counts, .metrics, .panel-grid, .template-controls, .template-actions {
         grid-template-columns: 1fr;
       }
 
       h1 { font-size: 20px; }
-      .metric .value { font-size: 21px; }
+      .metric .value { font-size: 24px; }
+      .metric .value.small { font-size: 20px; }
     }
   </style>
 </head>
@@ -315,6 +482,11 @@
         <button type="button" id="resetBtn" title="恢复 sample_134 默认值">↺ 重置</button>
         <button type="button" id="exportBtn" title="导出当前输入配置">⇩ 导出 JSON</button>
       </div>
+      <div class="system-strip" aria-label="系统状态">
+        <span class="chip live">Stable / 本地计算</span>
+        <span class="chip info">Simulated / sample_134</span>
+        <span class="chip">Offline / 无外部接口</span>
+      </div>
     </div>
   </header>
 
@@ -322,6 +494,19 @@
     <div class="inputs">
       <section class="panel">
         <h2>基础面板</h2>
+        <div class="template-controls" aria-label="基础面板模板">
+          <label>模板
+            <select id="panelTemplateSlot"></select>
+          </label>
+          <label>模板名称
+            <input id="panelTemplateName" autocomplete="off" maxlength="24">
+          </label>
+          <div class="template-actions">
+            <button type="button" id="savePanelTemplateNameBtn">保存名称</button>
+            <button type="button" id="savePanelTemplatePanelBtn">保存面板</button>
+            <button type="button" id="resetPanelBtn">重置</button>
+          </div>
+        </div>
         <div class="grid" id="panelInputs"></div>
       </section>
 
@@ -346,7 +531,13 @@
       </section>
 
       <section class="panel">
-        <h2>技能次数</h2>
+        <h2>加速档位与技能次数</h2>
+        <div class="grid">
+          <label>加速档位
+            <select id="haste_tier"></select>
+          </label>
+        </div>
+        <div class="footnote" id="hasteNote">技能次数由加速档位固定，不在这里手动编辑。</div>
         <div class="skill-counts" id="countInputs"></div>
       </section>
     </div>
@@ -396,12 +587,13 @@
       </section>
     </div>
   </main>
+  <div id="formulaTooltip" class="formula-tooltip" hidden></div>
 
   <script>
     (function () {
       "use strict";
 
-      const CRITICAL_STRIKE_SCALE = 225946.1;
+      const CRITICAL_STRIKE_SCALE = 239799.331104;
       const CRITICAL_EFFECT_SCALE = 72846.14;
       const OVERCOME_SCALE = 225946.1;
       const STRAIN_SCALE = 133328.82;
@@ -432,6 +624,9 @@
         target_level: DEFAULT_TARGET_LEVEL
       };
 
+      const PANEL_TEMPLATE_STORAGE_KEY = "tiance-dps-panel-templates-v1";
+      const PANEL_TEMPLATE_SLOTS = 5;
+
       const DEFAULT_ROTATION_COUNTS = {
         long_ya: 58,
         long_ya_counter: 58,
@@ -444,6 +639,20 @@
         chuan_yun_2: 14,
         chuan_yun_2_counter: 14,
         long_yin: 30
+      };
+
+      const DEFAULT_HASTE_TIER = "haste_1";
+      const HASTE_TIER_ROTATION_COUNTS = {
+        haste_1: {
+          label: "一段加速",
+          available: true,
+          counts: DEFAULT_ROTATION_COUNTS
+        },
+        haste_2: {
+          label: "二段加速（待补）",
+          available: false,
+          counts: null
+        }
       };
 
       const DEFAULT_AOXUE_WU_BUFF = {
@@ -546,12 +755,24 @@
       function buildDefaultConfig() {
         return {
           panel: clone(DEFAULT_PANEL),
-          counts: clone(DEFAULT_ROTATION_COUNTS),
+          haste_tier: DEFAULT_HASTE_TIER,
+          counts: clone(HASTE_TIER_ROTATION_COUNTS[DEFAULT_HASTE_TIER].counts),
           duration: DEFAULT_DURATION,
           level_reduction: DEFAULT_LEVEL_REDUCTION,
           aoxue: clone(DEFAULT_AOXUE_WU_BUFF),
           global: clone(DEFAULT_GLOBAL_EFFECTS)
         };
+      }
+
+      function getCountsForHasteTier(hasteTier) {
+        const tier = HASTE_TIER_ROTATION_COUNTS[hasteTier];
+        if (!tier) {
+          throw new Error("不支持的加速档位：" + hasteTier);
+        }
+        if (!tier.available || !tier.counts) {
+          throw new Error(tier.label + " 的技能次数数据待补");
+        }
+        return clone(tier.counts);
       }
 
       function buildAttribute(panel) {
@@ -664,6 +885,7 @@
         let incB = 0;
         let incC = 0;
         let incD = 0;
+        const hitExplains = [];
         for (let i = 0; i < Number(skill.times || 1); i += 1) {
           const crit = criticalStrike(attr) + Number(skill.critical_strike || 0);
           const cfx = criticalEffect(attr) + Number(skill.critical_effect || 0);
@@ -680,17 +902,44 @@
               + attackPower(attr) * Number(skill.attack_power_cof || 0)
               + attr.weapon_damage * Number(skill.weapon_damage_cof || 0);
           }
-          base *= (1 + kB) * (1 + kC) * (1 + kD);
-          base *= (1 + overcome(attr)) * (1 + strain(attr));
-          const hit = base * (1 - defenseRate);
+          const baseBeforeMultipliers = base;
+          const multiplier = (1 + kB) * (1 + kC) * (1 + kD);
+          const postDamageMultiplier = baseBeforeMultipliers * multiplier;
+          const postAttributeMultiplier = postDamageMultiplier * (1 + overcome(attr)) * (1 + strain(attr));
+          const hit = postAttributeMultiplier * (1 - defenseRate);
           const critDamage = hit * cfx;
-          totalNoncrit += hit * (1 - crit);
-          totalCrit += critDamage * crit;
+          const noncritPart = hit * (1 - crit);
+          const critPart = critDamage * crit;
+          totalNoncrit += noncritPart;
+          totalCrit += critPart;
+          hitExplains.push({
+            index: i + 1,
+            crit,
+            cfx,
+            targetDef,
+            defenseRate,
+            kB,
+            kC,
+            kD,
+            baseBeforeMultipliers,
+            multiplier,
+            postDamageMultiplier,
+            postAttributeMultiplier,
+            hit,
+            critDamage,
+            noncritPart,
+            critPart
+          });
           incB += Number(skill.increasing_k_b || 0);
           incC += Number(skill.increasing_k_c || 0);
           incD += Number(skill.increasing_k_d || 0);
         }
-        return [totalNoncrit, totalCrit, totalNoncrit + totalCrit];
+        return {
+          noncrit: totalNoncrit,
+          crit: totalCrit,
+          total: totalNoncrit + totalCrit,
+          hits: hitExplains
+        };
       }
 
       function summarizeFinalPanel(attr) {
@@ -700,12 +949,14 @@
         const st = strain(attr);
         const effectiveTargetDefense = Math.max(0, attr.target_defense * (1 - attr.ignore_defense));
         const defenseRate = effectiveTargetDefense / (attr.defense_scale + effectiveTargetDefense);
+        const totalAp = attackPower(attr);
+        const str = strength(attr);
         return {
           level: attr.target_level,
-          strength: strength(attr),
+          strength: str,
           base_physical_ap: attr.base_physical_attack_power,
           ap_gain: attr.physical_attack_power_gain,
-          attack_power_total: attackPower(attr),
+          attack_power_total: totalAp,
           weapon_damage: attr.weapon_damage,
           crit_rate: critRate,
           crit_rating_equiv: critRate * CRITICAL_STRIKE_SCALE,
@@ -718,19 +969,82 @@
           ignore_defense: attr.ignore_defense,
           target_defense: attr.target_defense,
           defense_scale: attr.defense_scale,
-          defense_rate_after_ignore: defenseRate
+          defense_rate_after_ignore: defenseRate,
+          explain: {
+            attack_power_total: [
+              "总外功 = 基础外功 * 攻击增益 + 力道 * (基础外功系数 + 天策额外系数)",
+              `${fmtRaw(attr.base_physical_attack_power, 2)} * ${fmtRaw(attr.physical_attack_power_gain, 4)} + ${fmtRaw(str, 2)} * (${fmtRaw(BASE_STRENGTH_TO_PHYSICAL_AP, 2)} + ${fmtRaw(TIANCE_EXTRA_STRENGTH_TO_PHYSICAL_AP, 2)}) = ${fmtRaw(totalAp, 2)}`
+            ].join("\n"),
+            crit_rate: [
+              "会心率 = 会心评级 / 会心系数 + 全局会心 + 身法换算",
+              `${fmtRaw(attr.base_physical_critical_strike, 0)} / ${fmtRaw(CRITICAL_STRIKE_SCALE, 1)} + ${fmtRaw(attr.physical_critical_strike_gain, 4)} + ${fmtRaw(attr.base_agility * attr.agility_gain * 0.64, 4)} = ${formatPercent(critRate)}`
+            ].join("\n"),
+            crit_effect_total: [
+              "会效 = 基础会效 + 会效评级 / 会效系数 + 会效增益",
+              `1.75 + ${fmtRaw(attr.base_physical_critical_effect, 0)} / ${fmtRaw(CRITICAL_EFFECT_SCALE, 2)} + ${fmtRaw(attr.physical_critical_effect_gain, 4)} = ${fmtRaw(critEff, 4)}`
+            ].join("\n"),
+            overcome_rate: [
+              "破防 = (基础破防评级 + 力道 * 基础破防系数) / 破防系数 * 破防增益 + 力道 * 天策额外破防系数 / 破防系数",
+              `(${fmtRaw(attr.base_physical_overcome, 0)} + ${fmtRaw(str, 2)} * ${fmtRaw(BASE_STRENGTH_TO_PHYSICAL_OVERCOME, 2)}) / ${fmtRaw(OVERCOME_SCALE, 1)} * ${fmtRaw(attr.physical_overcome_gain, 4)} + ${fmtRaw(str, 2)} * ${fmtRaw(TIANCE_EXTRA_STRENGTH_TO_PHYSICAL_OVERCOME, 2)} / ${fmtRaw(OVERCOME_SCALE, 1)} = ${formatPercent(ov)}`
+            ].join("\n"),
+            strain_rate: [
+              "无双 = 无双评级 / 无双系数 + 无双增益",
+              `${fmtRaw(attr.base_strain, 0)} / ${fmtRaw(STRAIN_SCALE, 2)} + ${fmtRaw(attr.strain_gain, 4)} = ${formatPercent(st)}`
+            ].join("\n"),
+            defense_rate_after_ignore: [
+              "无视后防御减伤 = 有效防御 / (防御系数 + 有效防御)",
+              `有效防御 = ${fmtRaw(attr.target_defense, 2)} * (1 - ${fmtRaw(attr.ignore_defense, 4)}) = ${fmtRaw(effectiveTargetDefense, 2)}`,
+              `${fmtRaw(effectiveTargetDefense, 2)} / (${fmtRaw(attr.defense_scale, 2)} + ${fmtRaw(effectiveTargetDefense, 2)}) = ${formatPercent(defenseRate)}`
+            ].join("\n")
+          }
+        };
+      }
+
+      function buildSkillExplain(attr, skill, breakdown, count, row) {
+        const first = breakdown.hits[0];
+        const skillName = SKILL_LABELS[row.skill] || row.skill;
+        const ap = attackPower(attr);
+        const baseLine = skill.kind === "counter"
+          ? `破招基础 = 破招值 * 破招系数 = ${fmtRaw(attr.counter, 2)} * ${fmtRaw(skill.counter_cof || 0, 2)} = ${fmtRaw(first.baseBeforeMultipliers, 2)}`
+          : `技能基础 = 基础值 + AP * AP系数 + 武伤 * 武伤系数 = ${fmtRaw(skill.base_damage || 0, 2)} + ${fmtRaw(ap, 2)} * ${fmtRaw(skill.attack_power_cof || 0, 2)} + ${fmtRaw(attr.weapon_damage, 2)} * ${fmtRaw(skill.weapon_damage_cof || 0, 2)} = ${fmtRaw(first.baseBeforeMultipliers, 2)}`;
+        const common = [
+          `${skillName} 单次伤害拆解`,
+          baseLine,
+          `B/C/D = ${fmtRaw(first.kB, 4)} / ${fmtRaw(first.kC, 4)} / ${fmtRaw(first.kD, 4)}`,
+          `乘区 = (1+B)*(1+C)*(1+D) = ${fmtRaw(1 + first.kB, 4)} * ${fmtRaw(1 + first.kC, 4)} * ${fmtRaw(1 + first.kD, 4)} = ${fmtRaw(first.multiplier, 4)}`,
+          `属性乘区 = (1+破防)*(1+无双) = ${fmtRaw(1 + overcome(attr), 4)} * ${fmtRaw(1 + strain(attr), 4)}`,
+          `防御减伤 = ${fmtRaw(first.targetDef, 2)} / (${fmtRaw(attr.defense_scale, 2)} + ${fmtRaw(first.targetDef, 2)}) = ${formatPercent(first.defenseRate)}`,
+          `命中伤害 = ${fmtRaw(first.postAttributeMultiplier, 2)} * (1 - ${fmtRaw(first.defenseRate, 4)}) = ${fmtRaw(first.hit, 2)}`,
+          `会心率 = 面板会心 + 技能会心 = ${formatPercent(criticalStrike(attr))} + ${formatPercent(skill.critical_strike || 0)} = ${formatPercent(first.crit)}`,
+          `会效 = 面板会效 + 技能会效 = ${fmtRaw(criticalEffect(attr), 4)} + ${fmtRaw(skill.critical_effect || 0, 4)} = ${fmtRaw(first.cfx, 4)}`,
+          `次数 ${count}`
+        ];
+        return {
+          noncrit: common.concat([
+            `不会心贡献 = 命中伤害 * (1 - 会心率) * 次数`,
+            `${fmtRaw(first.hit, 2)} * (1 - ${fmtRaw(first.crit, 4)}) * ${count} = ${fmtRaw(row.noncrit, 2)} (${formatWan(row.noncrit)})`
+          ]).join("\n"),
+          crit: common.concat([
+            `会心贡献 = 命中伤害 * 会效 * 会心率 * 次数`,
+            `${fmtRaw(first.hit, 2)} * ${fmtRaw(first.cfx, 4)} * ${fmtRaw(first.crit, 4)} * ${count} = ${fmtRaw(row.crit, 2)} (${formatWan(row.crit)})`
+          ]).join("\n"),
+          total: common.concat([
+            `总伤害 = 不会心贡献 + 会心贡献`,
+            `${fmtRaw(row.noncrit, 2)} + ${fmtRaw(row.crit, 2)} = ${fmtRaw(row.total, 2)} (${formatWan(row.total)})`
+          ]).join("\n")
         };
       }
 
       function evaluateConfig(config) {
+        const counts = config.haste_tier ? getCountsForHasteTier(config.haste_tier) : config.counts;
         const attr = buildAttribute(config.panel);
         const skills = buildSkills();
         applyAoxueWu(attr, skills, config.aoxue);
         applyGlobalEffects(attr, skills, config.global);
         const rows = [];
         let grand = 0;
-        Object.keys(config.counts).forEach((key) => {
-          const count = Math.trunc(Number(config.counts[key]));
+        Object.keys(counts).forEach((key) => {
+          const count = Math.trunc(Number(counts[key]));
           if (count <= 0) return;
           if (!skills[key]) {
             throw new Error("未知技能：" + key);
@@ -739,11 +1053,12 @@
           const row = {
             skill: key,
             count,
-            noncrit: parts[0] * count,
-            crit: parts[1] * count,
-            total: parts[2] * count,
+            noncrit: parts.noncrit * count,
+            crit: parts.crit * count,
+            total: parts.total * count,
             ratio: 0
           };
+          row.explain = buildSkillExplain(attr, skills[key], parts, count, row);
           grand += row.total;
           rows.push(row);
         });
@@ -754,6 +1069,7 @@
         const dps = grand / Number(config.duration) * (1 - Number(config.level_reduction));
         return {
           name: "frontend",
+          haste_tier: config.haste_tier,
           duration: Number(config.duration),
           level_reduction: Number(config.level_reduction),
           panel: summarizeFinalPanel(attr),
@@ -770,6 +1086,18 @@
           minimumFractionDigits: digits,
           maximumFractionDigits: digits
         });
+      }
+
+      function fmtRaw(value, digits) {
+        return Number(value).toLocaleString("zh-CN", {
+          useGrouping: false,
+          minimumFractionDigits: digits,
+          maximumFractionDigits: digits
+        });
+      }
+
+      function formatWan(value) {
+        return formatNumber(Number(value) / 10000, 2) + "万";
       }
 
       function formatPercent(value) {
@@ -795,9 +1123,225 @@
         container.appendChild(wrapper);
       }
 
+      function makeExplainable(element, explain) {
+        element.classList.remove("explainable");
+        element.removeAttribute("data-explain");
+        element.removeAttribute("tabindex");
+        if (!explain) return;
+        element.classList.add("explainable");
+        element.dataset.explain = explain;
+        element.tabIndex = 0;
+      }
+
+      function positionTooltip(tooltip, target, event) {
+        const rect = target.getBoundingClientRect();
+        const baseX = event && Number.isFinite(event.clientX) ? event.clientX : rect.left + rect.width / 2;
+        const baseY = event && Number.isFinite(event.clientY) ? event.clientY : rect.bottom;
+        let left = baseX + 14;
+        let top = baseY + 14;
+        const tipRect = tooltip.getBoundingClientRect();
+        if (left + tipRect.width > window.innerWidth - 8) {
+          left = Math.max(8, window.innerWidth - tipRect.width - 8);
+        }
+        if (top + tipRect.height > window.innerHeight - 8) {
+          top = Math.max(8, baseY - tipRect.height - 14);
+        }
+        tooltip.style.left = left + "px";
+        tooltip.style.top = top + "px";
+      }
+
+      function initTooltip() {
+        const tooltip = document.getElementById("formulaTooltip");
+        let activeTarget = null;
+
+        function show(target, event) {
+          if (!target || !target.dataset.explain) return;
+          activeTarget = target;
+          tooltip.textContent = target.dataset.explain;
+          tooltip.hidden = false;
+          positionTooltip(tooltip, target, event);
+        }
+
+        function hide() {
+          activeTarget = null;
+          tooltip.hidden = true;
+        }
+
+        document.addEventListener("mouseover", (event) => {
+          const target = event.target.closest(".explainable");
+          if (target) show(target, event);
+        });
+        document.addEventListener("mousemove", (event) => {
+          if (activeTarget) positionTooltip(tooltip, activeTarget, event);
+        });
+        document.addEventListener("mouseout", (event) => {
+          const target = event.target.closest(".explainable");
+          if (target && !target.contains(event.relatedTarget)) hide();
+        });
+        document.addEventListener("focusin", (event) => {
+          const target = event.target.closest(".explainable");
+          if (target) show(target, null);
+        });
+        document.addEventListener("focusout", (event) => {
+          if (event.target.closest(".explainable")) hide();
+        });
+        document.addEventListener("click", (event) => {
+          const target = event.target.closest(".explainable");
+          if (target) {
+            show(target, event);
+          } else {
+            hide();
+          }
+        });
+        document.addEventListener("keydown", (event) => {
+          if (event.key === "Escape") hide();
+        });
+      }
+
+      function renderCountPreview(counts) {
+        const countContainer = document.getElementById("countInputs");
+        countContainer.innerHTML = "";
+        Object.keys(DEFAULT_ROTATION_COUNTS).forEach((key) => {
+          const wrapper = document.createElement("label");
+          wrapper.textContent = SKILL_LABELS[key] || key;
+          const input = document.createElement("input");
+          input.value = String(counts[key] ?? 0);
+          input.readOnly = true;
+          input.tabIndex = -1;
+          wrapper.appendChild(input);
+          countContainer.appendChild(wrapper);
+        });
+      }
+
+      function defaultPanelTemplateName(slot) {
+        return "模板 " + slot;
+      }
+
+      function loadPanelTemplates() {
+        if (typeof localStorage === "undefined") return {};
+        try {
+          const raw = localStorage.getItem(PANEL_TEMPLATE_STORAGE_KEY);
+          const parsed = raw ? JSON.parse(raw) : {};
+          return parsed && typeof parsed === "object" ? parsed : {};
+        } catch (error) {
+          return {};
+        }
+      }
+
+      function savePanelTemplates(templates) {
+        if (typeof localStorage === "undefined") return;
+        localStorage.setItem(PANEL_TEMPLATE_STORAGE_KEY, JSON.stringify(templates));
+      }
+
+      function readPanelFieldsFromForm() {
+        const panel = {};
+        PANEL_FIELDS.forEach(([key, label]) => {
+          panel[key] = parseNumber(document.getElementById(inputId("panel." + key)).value, label);
+        });
+        return panel;
+      }
+
+      function setPanelFieldsFromTemplate(panel) {
+        PANEL_FIELDS.forEach(([key]) => {
+          const value = Object.prototype.hasOwnProperty.call(panel || {}, key) ? panel[key] : DEFAULT_PANEL[key];
+          document.getElementById(inputId("panel." + key)).value = String(value);
+        });
+      }
+
+      function getPanelTemplateSlot() {
+        return document.getElementById("panelTemplateSlot").value || "1";
+      }
+
+      function renderPanelTemplateOptions() {
+        const templates = loadPanelTemplates();
+        const select = document.getElementById("panelTemplateSlot");
+        const nameInput = document.getElementById("panelTemplateName");
+        const selected = select.value || "1";
+        select.innerHTML = "";
+        for (let slot = 1; slot <= PANEL_TEMPLATE_SLOTS; slot += 1) {
+          const key = String(slot);
+          const option = document.createElement("option");
+          const name = templates[key]?.name || defaultPanelTemplateName(slot);
+          option.value = key;
+          option.textContent = key + " · " + name;
+          select.appendChild(option);
+        }
+        select.value = String(Math.min(PANEL_TEMPLATE_SLOTS, Math.max(1, Number(selected) || 1)));
+        const current = templates[select.value];
+        nameInput.value = current?.name || defaultPanelTemplateName(select.value);
+      }
+
+      function savePanelTemplateName() {
+        const status = document.getElementById("status");
+        const slot = getPanelTemplateSlot();
+        const nameInput = document.getElementById("panelTemplateName");
+        const name = nameInput.value.trim() || defaultPanelTemplateName(slot);
+        const templates = loadPanelTemplates();
+        const current = templates[slot] || {};
+        templates[slot] = {
+          name,
+          panel: current.panel || clone(DEFAULT_PANEL)
+        };
+        savePanelTemplates(templates);
+        renderPanelTemplateOptions();
+        document.getElementById("panelTemplateSlot").value = slot;
+        document.getElementById("panelTemplateName").value = name;
+        status.className = "status";
+        status.textContent = "已保存模板名称：" + name;
+      }
+
+      function savePanelTemplatePanel() {
+        const status = document.getElementById("status");
+        try {
+          const slot = getPanelTemplateSlot();
+          const templates = loadPanelTemplates();
+          const name = templates[slot]?.name || document.getElementById("panelTemplateName").value.trim() || defaultPanelTemplateName(slot);
+          templates[slot] = {
+            name,
+            panel: readPanelFieldsFromForm()
+          };
+          savePanelTemplates(templates);
+          renderPanelTemplateOptions();
+          document.getElementById("panelTemplateSlot").value = slot;
+          document.getElementById("panelTemplateName").value = name;
+          status.className = "status";
+          status.textContent = "已保存基础面板：" + name;
+        } catch (error) {
+          status.className = "status error";
+          status.textContent = error.message;
+        }
+      }
+
+      function loadPanelTemplate() {
+        const slot = getPanelTemplateSlot();
+        const templates = loadPanelTemplates();
+        const template = templates[slot];
+        setPanelFieldsFromTemplate(template?.panel || DEFAULT_PANEL);
+        document.getElementById("panelTemplateName").value = template?.name || defaultPanelTemplateName(slot);
+        calculateAndRender();
+      }
+
+      function resetPanelFields() {
+        const emptyPanel = {};
+        PANEL_FIELDS.forEach(([key]) => {
+          emptyPanel[key] = 0;
+        });
+        setPanelFieldsFromTemplate(emptyPanel);
+        calculateAndRender();
+      }
+
+      function initPanelTemplates() {
+        renderPanelTemplateOptions();
+        document.getElementById("panelTemplateSlot").addEventListener("change", loadPanelTemplate);
+        document.getElementById("savePanelTemplateNameBtn").addEventListener("click", savePanelTemplateName);
+        document.getElementById("savePanelTemplatePanelBtn").addEventListener("click", savePanelTemplatePanel);
+        document.getElementById("resetPanelBtn").addEventListener("click", resetPanelFields);
+      }
+
       function initForm() {
         const panelContainer = document.getElementById("panelInputs");
         PANEL_FIELDS.forEach(([key, label]) => makeField(panelContainer, "panel." + key, label, DEFAULT_PANEL[key]));
+        initPanelTemplates();
 
         const targetSelect = document.getElementById("target_level");
         Object.keys(DEFENSE_COF).forEach((level) => {
@@ -817,22 +1361,28 @@
           makeField(buffContainer, key, label, source[shortKey]);
         });
 
-        const countContainer = document.getElementById("countInputs");
-        Object.keys(DEFAULT_ROTATION_COUNTS).forEach((key) => {
-          makeField(countContainer, "counts." + key, SKILL_LABELS[key] || key, DEFAULT_ROTATION_COUNTS[key]);
+        const hasteSelect = document.getElementById("haste_tier");
+        Object.keys(HASTE_TIER_ROTATION_COUNTS).forEach((tierKey) => {
+          const tier = HASTE_TIER_ROTATION_COUNTS[tierKey];
+          const option = document.createElement("option");
+          option.value = tierKey;
+          option.textContent = tier.label;
+          option.disabled = !tier.available;
+          hasteSelect.appendChild(option);
         });
+        hasteSelect.value = DEFAULT_HASTE_TIER;
+        renderCountPreview(HASTE_TIER_ROTATION_COUNTS[DEFAULT_HASTE_TIER].counts);
       }
 
       function readConfigFromForm() {
-        const panel = {};
-        PANEL_FIELDS.forEach(([key, label]) => {
-          panel[key] = parseNumber(document.getElementById(inputId("panel." + key)).value, label);
-        });
+        const panel = readPanelFieldsFromForm();
         panel.target_level = parseNumber(document.getElementById("target_level").value, "目标等级");
+        const hasteTier = document.getElementById("haste_tier").value;
 
         const config = {
           panel,
-          counts: {},
+          haste_tier: hasteTier,
+          counts: getCountsForHasteTier(hasteTier),
           duration: parseNumber(document.getElementById("duration").value, "战斗时长"),
           level_reduction: parsePercent(document.getElementById("level_reduction").value, "等级减伤"),
           aoxue: {},
@@ -852,21 +1402,11 @@
           const parser = shortKey === "flat_ap_add" ? parseNumber : parsePercent;
           config[group][shortKey] = parser(document.getElementById(inputId(key)).value, label);
         });
-
-        Object.keys(DEFAULT_ROTATION_COUNTS).forEach((key) => {
-          const parsed = parseNumber(document.getElementById(inputId("counts." + key)).value, SKILL_LABELS[key] || key);
-          if (parsed < 0) {
-            throw new Error((SKILL_LABELS[key] || key) + " 次数不能小于 0");
-          }
-          config.counts[key] = Math.trunc(parsed);
-        });
         return config;
       }
 
       function setFormFromConfig(config) {
-        PANEL_FIELDS.forEach(([key]) => {
-          document.getElementById(inputId("panel." + key)).value = String(config.panel[key]);
-        });
+        setPanelFieldsFromTemplate(config.panel);
         document.getElementById("target_level").value = String(config.panel.target_level);
         document.getElementById("duration").value = String(config.duration);
         document.getElementById("level_reduction").value = pctInput(config.level_reduction);
@@ -875,38 +1415,43 @@
           const shortKey = key.split(".")[1];
           document.getElementById(inputId(key)).value = String(config[group][shortKey]);
         });
-        Object.keys(DEFAULT_ROTATION_COUNTS).forEach((key) => {
-          document.getElementById(inputId("counts." + key)).value = String(config.counts[key]);
-        });
+        document.getElementById("haste_tier").value = String(config.haste_tier);
+        renderCountPreview(config.counts);
       }
 
       function renderResult(result) {
-        document.getElementById("dpsOut").textContent = formatNumber(result.dps, 2);
-        document.getElementById("totalOut").textContent = formatNumber(result.total_damage, 1);
-        document.getElementById("defenseOut").textContent = formatPercent(result.panel.defense_rate_after_ignore);
+        const dpsOut = document.getElementById("dpsOut");
+        const totalOut = document.getElementById("totalOut");
+        const defenseOut = document.getElementById("defenseOut");
+        dpsOut.textContent = formatWan(result.dps);
+        totalOut.textContent = formatWan(result.total_damage);
+        defenseOut.textContent = formatPercent(result.panel.defense_rate_after_ignore);
+        makeExplainable(defenseOut, result.panel.explain.defense_rate_after_ignore);
 
         const panelItems = [
           ["等级", result.panel.level],
           ["力道", formatNumber(result.panel.strength, 2)],
           ["基础外功", formatNumber(result.panel.base_physical_ap, 2)],
-          ["总外功", formatNumber(result.panel.attack_power_total, 2)],
+          ["总外功", formatNumber(result.panel.attack_power_total, 2), "attack_power_total"],
           ["武伤", formatNumber(result.panel.weapon_damage, 2)],
-          ["会心", formatPercent(result.panel.crit_rate)],
-          ["会效", formatNumber(result.panel.crit_effect_total, 4)],
-          ["破防", formatPercent(result.panel.overcome_rate)],
-          ["无双", formatPercent(result.panel.strain_rate)],
+          ["会心", formatPercent(result.panel.crit_rate), "crit_rate"],
+          ["会效", formatNumber(result.panel.crit_effect_total, 4), "crit_effect_total"],
+          ["破防", formatPercent(result.panel.overcome_rate), "overcome_rate"],
+          ["无双", formatPercent(result.panel.strain_rate), "strain_rate"],
           ["无视防御", formatPercent(result.panel.ignore_defense)],
           ["目标防御", formatNumber(result.panel.target_defense, 2)],
           ["防御系数", formatNumber(result.panel.defense_scale, 2)]
         ];
         const panelContainer = document.getElementById("finalPanel");
         panelContainer.innerHTML = "";
-        panelItems.forEach(([key, value]) => {
+        panelItems.forEach(([key, value, explainKey]) => {
           const item = document.createElement("div");
           item.className = "kv";
           item.innerHTML = "<div class=\"k\"></div><div class=\"v\"></div>";
           item.querySelector(".k").textContent = key;
-          item.querySelector(".v").textContent = String(value);
+          const valueNode = item.querySelector(".v");
+          valueNode.textContent = String(value);
+          makeExplainable(valueNode, explainKey ? result.panel.explain[explainKey] : null);
           panelContainer.appendChild(item);
         });
 
@@ -926,9 +1471,12 @@
           const cells = tr.querySelectorAll("td");
           cells[0].textContent = SKILL_LABELS[row.skill] || row.skill;
           cells[1].textContent = String(row.count);
-          cells[2].textContent = formatNumber(row.noncrit, 1);
-          cells[3].textContent = formatNumber(row.crit, 1);
-          cells[4].textContent = formatNumber(row.total, 1);
+          cells[2].textContent = formatWan(row.noncrit);
+          cells[3].textContent = formatWan(row.crit);
+          cells[4].textContent = formatWan(row.total);
+          makeExplainable(cells[2], row.explain.noncrit);
+          makeExplainable(cells[3], row.explain.crit);
+          makeExplainable(cells[4], row.explain.total);
           cells[5].querySelector("div").textContent = formatNumber(ratioPct, 2) + "%";
           cells[5].querySelector(".ratio-bar").style.width = Math.max(0, Math.min(100, ratioPct)) + "%";
           body.appendChild(tr);
@@ -940,6 +1488,7 @@
         try {
           const config = readConfigFromForm();
           const result = evaluateConfig(config);
+          renderCountPreview(config.counts);
           renderResult(result);
           status.className = "status";
           status.textContent = "已按当前输入计算";
@@ -967,6 +1516,7 @@
 
       function init() {
         initForm();
+        initTooltip();
         setFormFromConfig(buildDefaultConfig());
         document.getElementById("calculateBtn").addEventListener("click", calculateAndRender);
         document.getElementById("resetBtn").addEventListener("click", () => {
@@ -975,6 +1525,7 @@
         });
         document.getElementById("exportBtn").addEventListener("click", exportConfig);
         document.querySelectorAll("input, select").forEach((field) => {
+          if (field.closest(".template-controls")) return;
           field.addEventListener("change", calculateAndRender);
         });
         calculateAndRender();
@@ -984,6 +1535,8 @@
         DEFENSE_COF,
         DEFAULT_PANEL,
         DEFAULT_ROTATION_COUNTS,
+        DEFAULT_HASTE_TIER,
+        HASTE_TIER_ROTATION_COUNTS,
         DEFAULT_AOXUE_WU_BUFF,
         DEFAULT_GLOBAL_EFFECTS,
         SKILL_SPECS,
