@@ -1,0 +1,281 @@
+:root {
+  color-scheme: dark;
+  font-family: Bahnschrift, Aptos, "Segoe UI", "Microsoft YaHei", sans-serif;
+  font-variant-numeric: tabular-nums;
+  color: #eaf1f7;
+  background: #07111f;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background: #07111f;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+button,
+input,
+select {
+  min-height: 36px;
+  border: 1px solid rgba(120, 160, 200, 0.24);
+  border-radius: 6px;
+  color: #eaf1f7;
+  background: #132746;
+}
+
+button {
+  padding: 0 12px;
+  cursor: pointer;
+}
+
+button:hover {
+  border-color: rgba(120, 200, 220, 0.42);
+  background: #182d4d;
+}
+
+input,
+select {
+  width: 100%;
+  padding: 6px 8px;
+}
+
+input:focus,
+select:focus {
+  outline: 2px solid rgba(51, 199, 217, 0.22);
+  border-color: #33c7d9;
+}
+
+.calculator-shell {
+  width: min(1680px, calc(100vw - 32px));
+  margin: 0 auto;
+  padding: 16px 0 28px;
+}
+
+.summary-band {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(420px, 0.9fr);
+  gap: 16px;
+  align-items: end;
+  padding: 16px 0;
+}
+
+.eyebrow {
+  margin: 0 0 6px;
+  color: #5fd1a5;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+h1,
+h2 {
+  margin: 0;
+  letter-spacing: 0;
+}
+
+h1 {
+  font-size: 26px;
+}
+
+h2 {
+  font-size: 16px;
+}
+
+.result-metrics {
+  display: grid;
+  grid-template-columns: 1.2fr 1.2fr 0.8fr;
+  gap: 8px;
+}
+
+.metric,
+.kv {
+  min-width: 0;
+  border: 1px solid rgba(120, 160, 200, 0.24);
+  border-radius: 8px;
+  background: #132746;
+  padding: 10px 12px;
+}
+
+.metric.primary {
+  border-left: 3px solid #22d3a8;
+  background: #182d4d;
+}
+
+.metric span,
+.kv span,
+label span {
+  display: block;
+  color: #9ab4cc;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.metric strong {
+  display: block;
+  margin-top: 3px;
+  font-size: 24px;
+  overflow-wrap: anywhere;
+}
+
+.workspace {
+  display: grid;
+  grid-template-columns: minmax(360px, 420px) minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+}
+
+.inputs-column,
+.outputs-column {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.panel {
+  width: 100%;
+  border: 1px solid rgba(120, 160, 200, 0.24);
+  border-radius: 8px;
+  background: #0f1e33;
+  padding: 14px;
+}
+
+.panel-title {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+}
+
+.panel h2 + .field-grid,
+.panel h2 + .table-wrap,
+.panel h2 + .panel-grid,
+.panel-title + .field-grid {
+  margin-top: 12px;
+}
+
+.field-grid,
+.count-grid,
+.panel-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.field-grid.compact {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.count-grid {
+  margin-top: 12px;
+}
+
+label {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.kv strong {
+  display: block;
+  margin-top: 4px;
+  font-size: 18px;
+  overflow-wrap: anywhere;
+}
+
+.table-wrap {
+  overflow-x: auto;
+  border: 1px solid rgba(120, 160, 200, 0.24);
+  border-radius: 8px;
+}
+
+table {
+  width: 100%;
+  min-width: 640px;
+  border-collapse: collapse;
+  background: #0f1e33;
+}
+
+th,
+td {
+  padding: 9px 10px;
+  border-bottom: 1px solid rgba(32, 67, 101, 0.72);
+  text-align: right;
+  white-space: nowrap;
+}
+
+th:first-child,
+td:first-child {
+  text-align: left;
+}
+
+th {
+  color: #9ab4cc;
+  font-size: 12px;
+  font-weight: 600;
+  background: #132746;
+}
+
+tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.ratio-cell {
+  min-width: 150px;
+}
+
+.ratio-cell span {
+  display: block;
+  margin-bottom: 4px;
+}
+
+.ratio-cell i {
+  display: block;
+  height: 7px;
+  border-radius: 4px;
+  background: #33c7d9;
+}
+
+@media (max-width: 1100px) {
+  .summary-band,
+  .workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .field-grid.compact {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .calculator-shell {
+    width: min(100vw - 24px, 1680px);
+    padding-top: 10px;
+  }
+
+  .result-metrics,
+  .field-grid,
+  .field-grid.compact,
+  .count-grid,
+  .panel-grid {
+    grid-template-columns: 1fr;
+  }
+
+  button,
+  input,
+  select {
+    min-height: 44px;
+  }
+
+  .metric strong {
+    font-size: 22px;
+  }
+}

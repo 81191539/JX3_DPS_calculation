@@ -1,3 +1,9 @@
+# Historical Design Note
+
+This document is a legacy ECMO digital twin design note and is not the current
+product design source for the JX3 DPS calculator. It is retained only as
+historical reference while the repository is being cleaned up.
+
 # ECMO Digital Twin DESIGN.md
 
 ## Design Intent
@@ -303,4 +309,3 @@ Use DESIGN.md to redesign the parameter details page as a dense clinical enginee
 ```text
 Use DESIGN.md to build a React dashboard screen for ECMO simulation. The first viewport must be the actual monitoring console, not a landing page.
 ```
-

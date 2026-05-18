@@ -3,6 +3,9 @@ __pycache__/
 .pytest_cache/
 .ipynb_checkpoints/
 external/
+node_modules/
+dist/
+coverage/
 
 *.py[cod]
 *$py.class
