@@ -19,13 +19,15 @@ body {
 
 button,
 input,
-select {
+select,
+textarea {
   font: inherit;
 }
 
 button,
 input,
-select {
+select,
+textarea {
   min-height: 36px;
   border: 1px solid rgba(120, 160, 200, 0.24);
   border-radius: 6px;
@@ -44,13 +46,27 @@ button:hover {
 }
 
 input,
-select {
+select,
+textarea {
   width: 100%;
   padding: 6px 8px;
 }
 
+textarea {
+  min-height: 132px;
+  resize: vertical;
+  line-height: 1.45;
+}
+
+input[type="checkbox"] {
+  width: 18px;
+  min-height: 18px;
+  accent-color: #22d3a8;
+}
+
 input:focus,
-select:focus {
+select:focus,
+textarea:focus {
   outline: 2px solid rgba(51, 199, 217, 0.22);
   border-color: #33c7d9;
 }
@@ -94,6 +110,31 @@ h2 {
   display: grid;
   grid-template-columns: 1.2fr 1.2fr 0.8fr;
   gap: 8px;
+}
+
+.module-nav {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.module-nav a {
+  min-width: 0;
+  border: 1px solid rgba(120, 160, 200, 0.24);
+  border-radius: 6px;
+  padding: 8px 10px;
+  color: #dce9f5;
+  background: #0f1e33;
+  text-align: center;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.module-nav a:hover {
+  border-color: rgba(120, 200, 220, 0.42);
+  background: #132746;
 }
 
 .metric,
@@ -158,7 +199,9 @@ label span {
 .panel h2 + .field-grid,
 .panel h2 + .table-wrap,
 .panel h2 + .panel-grid,
-.panel-title + .field-grid {
+.panel-title + .field-grid,
+.panel-title + .active-buffs,
+.panel-title + .action-row {
   margin-top: 12px;
 }
 
@@ -184,11 +227,98 @@ label {
   min-width: 0;
 }
 
+.action-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.scheme-editor {
+  margin-top: 10px;
+}
+
+.form-error {
+  margin: 8px 0 0;
+  color: #ffb4a8;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.active-buffs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.active-buffs span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  border: 1px solid rgba(120, 160, 200, 0.24);
+  border-radius: 6px;
+  padding: 0 8px;
+  color: #eaf1f7;
+  background: #132746;
+  font-size: 12px;
+}
+
+.buff-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.buff-item {
+  border: 1px solid rgba(120, 160, 200, 0.24);
+  border-radius: 8px;
+  background: #132746;
+  padding: 10px;
+}
+
+.buff-item p {
+  margin: 5px 0 10px;
+  color: #9ab4cc;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.buff-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.buff-toggle span {
+  color: #eaf1f7;
+  font-size: 14px;
+  font-weight: 700;
+}
+
 .kv strong {
   display: block;
   margin-top: 4px;
   font-size: 18px;
   overflow-wrap: anywhere;
+}
+
+.result-tabs-panel {
+  padding: 8px;
+}
+
+.result-tabs {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.result-tabs button {
+  min-width: 0;
+}
+
+.result-tabs button[aria-selected="true"] {
+  border-color: #22d3a8;
+  color: #ffffff;
+  background: #183553;
 }
 
 .table-wrap {
@@ -271,8 +401,14 @@ tbody tr:last-child td {
 
   button,
   input,
-  select {
+  select,
+  textarea {
     min-height: 44px;
+  }
+
+  .module-nav,
+  .result-tabs {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .metric strong {

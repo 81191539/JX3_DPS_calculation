@@ -2,6 +2,8 @@ import type {
   GoldenCase,
   RotationCounts,
   SkillDefinitions,
+  TeamBuffConfigs,
+  TeamBuffDefinitions,
   TargetConfigs,
 } from "../core/tianceDps";
 
@@ -81,6 +83,49 @@ export const defaultGlobalEffects = {
   apGainAdd: 0.05,
 } as const;
 
+export const simplifiedTeamBuffs = {
+  han_ru_lei: {
+    id: "han_ru_lei",
+    label: "撼如雷",
+    description: "简化为外功攻击百分比增益。",
+    maxStacks: 1,
+    effects: { apGainAdd: 0.1 },
+  },
+  po_feng: {
+    id: "po_feng",
+    label: "破风",
+    description: "简化为目标承伤增益。",
+    maxStacks: 1,
+    effects: { skillKdGain: 0.05 },
+  },
+  po_jia: {
+    id: "po_jia",
+    label: "破甲",
+    description: "简化为额外无视防御。",
+    maxStacks: 1,
+    effects: { ignoreDefPct: 0.1 },
+  },
+  xu_ruo: {
+    id: "xu_ruo",
+    label: "虚弱",
+    description: "简化为外功 C 乘区增益。",
+    maxStacks: 5,
+    effects: { skillKcGain: 0.01 },
+  },
+} satisfies TeamBuffDefinitions;
+
+export const defaultTeamBuffConfigs = Object.fromEntries(
+  Object.entries(simplifiedTeamBuffs).map(([id, buff]) => [
+    id,
+    {
+      enabled: false,
+      coverage: 1,
+      stacks: 1,
+      effects: { ...buff.effects },
+    },
+  ]),
+) as TeamBuffConfigs;
+
 export const hasteTierRotationCounts = {
   haste_1: {
     label: "一段加速",
@@ -95,7 +140,6 @@ export const hasteTierRotationCounts = {
 } as const;
 
 export const unsupportedDataPlaceholders = {
-  teamBuffs: "预留接口：团队增益将在后续阶段补齐。",
   skillLevels: "预留接口：完整技能等级数据将在后续阶段补齐。",
   manuals: "预留接口：秘籍数据将在后续阶段补齐。",
   talents: "预留接口：奇穴数据将在后续阶段补齐。",
@@ -113,4 +157,6 @@ export const defaultCalculatorCase: GoldenCase = {
   levelReduction: 0,
   aoxueWu: defaultAoxueWuBuff,
   globalEffects: defaultGlobalEffects,
+  teamBuffDefinitions: simplifiedTeamBuffs,
+  teamBuffs: defaultTeamBuffConfigs,
 };

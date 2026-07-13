@@ -6,13 +6,16 @@
   "scripts": {
     "dev": "vite --host 127.0.0.1",
     "build": "tsc -b && vite build",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:e2e": "playwright test",
+    "test:phase5": "npm run test && npm run build && npm run test:e2e"
   },
   "dependencies": {
     "react": "latest",
     "react-dom": "latest"
   },
   "devDependencies": {
+    "@playwright/test": "^1.60.0",
     "@types/node": "latest",
     "@types/react": "latest",
     "@types/react-dom": "latest",

@@ -52,6 +52,36 @@ export interface GlobalEffects {
   apGainAdd?: number;
 }
 
+export interface TeamBuffEffects {
+  flatApAdd?: number;
+  apGainAdd?: number;
+  critGainAdd?: number;
+  overcomeGainAdd?: number;
+  strainGainAdd?: number;
+  ignoreDefPct?: number;
+  skillKbGain?: number;
+  skillKcGain?: number;
+  skillKdGain?: number;
+}
+
+export interface TeamBuffDefinition {
+  id: string;
+  label: string;
+  description: string;
+  maxStacks: number;
+  effects: TeamBuffEffects;
+}
+
+export interface TeamBuffConfig {
+  enabled: boolean;
+  coverage: number;
+  stacks: number;
+  effects?: TeamBuffEffects;
+}
+
+export type TeamBuffDefinitions = Record<string, TeamBuffDefinition>;
+export type TeamBuffConfigs = Record<string, TeamBuffConfig>;
+
 export interface GoldenCase {
   name: string;
   panel: PanelInput;
@@ -63,6 +93,8 @@ export interface GoldenCase {
   levelReduction?: number;
   aoxueWu?: AoxueWuBuff;
   globalEffects?: GlobalEffects;
+  teamBuffDefinitions?: TeamBuffDefinitions;
+  teamBuffs?: TeamBuffConfigs;
 }
 
 export interface FinalPanelSummary {
@@ -95,6 +127,14 @@ export interface RotationBreakdownRow {
   ratio: number;
 }
 
+export interface AppliedTeamBuff {
+  id: string;
+  label: string;
+  coverage: number;
+  stacks: number;
+  multiplier: number;
+}
+
 export interface EvaluationResult {
   name: string;
   hasteTier?: string;
@@ -106,6 +146,7 @@ export interface EvaluationResult {
   skillTotals: Partial<Record<SkillId, number>>;
   skillRatios: Partial<Record<SkillId, number>>;
   breakdown: RotationBreakdownRow[];
+  activeTeamBuffs: AppliedTeamBuff[];
 }
 
 export interface StatWeightRow {
@@ -291,6 +332,57 @@ export function applyGlobalEffects(
   }
 }
 
+function clamp(value: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, value));
+}
+
+function effectValue(value: number | undefined, multiplier: number) {
+  return (value ?? 0) * multiplier;
+}
+
+export function applyTeamBuffs(
+  attr: AttributeState,
+  skills: Iterable<SkillState>,
+  definitions: TeamBuffDefinitions = {},
+  configs: TeamBuffConfigs = {},
+): AppliedTeamBuff[] {
+  const skillList = Array.from(skills);
+  const applied: AppliedTeamBuff[] = [];
+
+  for (const [id, config] of Object.entries(configs)) {
+    const definition = definitions[id];
+    if (!definition || !config.enabled) continue;
+
+    const coverage = clamp(config.coverage, 0, 1);
+    const stacks = clamp(Math.trunc(config.stacks), 0, definition.maxStacks);
+    const multiplier = coverage * stacks;
+    if (multiplier <= 0) continue;
+
+    const effects = config.effects ?? definition.effects;
+    attr.basePhysicalAttackPower += effectValue(effects.flatApAdd, multiplier);
+    attr.physicalAttackPowerGain += effectValue(effects.apGainAdd, multiplier);
+    attr.physicalCriticalStrikeGain += effectValue(effects.critGainAdd, multiplier);
+    attr.physicalOvercomeGain += effectValue(effects.overcomeGainAdd, multiplier);
+    attr.strainGain += effectValue(effects.strainGainAdd, multiplier);
+    attr.ignoreDefense += effectValue(effects.ignoreDefPct, multiplier);
+    for (const skill of skillList) {
+      skill.kB += effectValue(effects.skillKbGain, multiplier);
+      skill.kC += effectValue(effects.skillKcGain, multiplier);
+      skill.kD += effectValue(effects.skillKdGain, multiplier);
+    }
+
+    applied.push({
+      id,
+      label: definition.label,
+      coverage,
+      stacks,
+      multiplier,
+    });
+  }
+
+  return applied;
+}
+
 function skillBaseDamage(attr: AttributeState, skill: SkillState) {
   if (skill.kind === "counter") {
     return attr.counter * skill.counterCof;
@@ -432,11 +524,17 @@ export function buildCaseContext(currentCase: GoldenCase) {
   if (currentCase.globalEffects) {
     applyGlobalEffects(attr, Object.values(skills), currentCase.globalEffects);
   }
-  return { attr, skills };
+  const activeTeamBuffs = applyTeamBuffs(
+    attr,
+    Object.values(skills),
+    currentCase.teamBuffDefinitions,
+    currentCase.teamBuffs,
+  );
+  return { attr, skills, activeTeamBuffs };
 }
 
 export function evaluateCase(currentCase: GoldenCase): EvaluationResult {
-  const { attr, skills } = buildCaseContext(currentCase);
+  const { attr, skills, activeTeamBuffs } = buildCaseContext(currentCase);
   const breakdown = rotationBreakdown(attr, skills, currentCase.counts);
   const totalDamage = breakdown.reduce((total, row) => total + row.total, 0);
   const duration = currentCase.duration ?? DEFAULT_DURATION;
@@ -453,6 +551,7 @@ export function evaluateCase(currentCase: GoldenCase): EvaluationResult {
     skillTotals: Object.fromEntries(breakdown.map((row) => [row.skill, row.total])),
     skillRatios: Object.fromEntries(breakdown.map((row) => [row.skill, row.ratio])),
     breakdown,
+    activeTeamBuffs,
   };
 }
 

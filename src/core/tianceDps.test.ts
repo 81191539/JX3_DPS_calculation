@@ -92,4 +92,98 @@ describe("estimateStatWeights", () => {
       expect(Number.isFinite(row.scaledDeltaDps)).toBe(true);
     }
   });
+
+  it("keeps the default stat weight baseline traceable", () => {
+    const weights = estimateStatWeights(defaultCalculatorCase);
+    const byStat = Object.fromEntries(weights.map((row) => [row.stat, row]));
+
+    expectClose(byStat.basePhysicalAttackPower?.deltaDps, 38.997693572891876);
+    expectClose(byStat.strength?.scaledDeltaDps, 78.4987372525502);
+    expect(weights[0]?.stat).toBe("strength");
+  });
+});
+
+describe("team buffs", () => {
+  it("keeps the Phase 5 baseline when team buffs are disabled by default", () => {
+    const result = evaluateCase(defaultCalculatorCase);
+
+    expect(result.activeTeamBuffs).toEqual([]);
+    expectClose(result.totalDamage, 567037643.6896998, 1e-5);
+    expectClose(result.dps, 3150209.131609443, 1e-6);
+  });
+
+  it("applies a single enabled team buff in the expected direction", () => {
+    const base = evaluateCase(defaultCalculatorCase);
+    const withHanRuLei = evaluateCase({
+      ...defaultCalculatorCase,
+      teamBuffs: {
+        ...defaultCalculatorCase.teamBuffs,
+        han_ru_lei: {
+          ...defaultCalculatorCase.teamBuffs?.han_ru_lei,
+          enabled: true,
+          coverage: 1,
+          stacks: 1,
+        },
+      },
+    });
+
+    expect(withHanRuLei.activeTeamBuffs.map((buff) => buff.id)).toEqual(["han_ru_lei"]);
+    expect(withHanRuLei.panel.attackPowerTotal).toBeGreaterThan(base.panel.attackPowerTotal);
+    expect(withHanRuLei.dps).toBeGreaterThan(base.dps);
+  });
+
+  it("combines multiple enabled team buffs through the core config", () => {
+    const base = evaluateCase(defaultCalculatorCase);
+    const combined = evaluateCase({
+      ...defaultCalculatorCase,
+      teamBuffs: {
+        ...defaultCalculatorCase.teamBuffs,
+        po_feng: {
+          ...defaultCalculatorCase.teamBuffs?.po_feng,
+          enabled: true,
+          coverage: 0.5,
+          stacks: 1,
+        },
+        po_jia: {
+          ...defaultCalculatorCase.teamBuffs?.po_jia,
+          enabled: true,
+          coverage: 1,
+          stacks: 1,
+        },
+        xu_ruo: {
+          ...defaultCalculatorCase.teamBuffs?.xu_ruo,
+          enabled: true,
+          coverage: 1,
+          stacks: 3,
+        },
+      },
+    });
+
+    expect(combined.activeTeamBuffs.map((buff) => buff.id)).toEqual([
+      "po_feng",
+      "po_jia",
+      "xu_ruo",
+    ]);
+    expect(combined.panel.ignoreDefense).toBeGreaterThan(base.panel.ignoreDefense);
+    expect(combined.dps).toBeGreaterThan(base.dps);
+  });
+
+  it("treats zero coverage as disabled for calculation output", () => {
+    const base = evaluateCase(defaultCalculatorCase);
+    const zeroCoverage = evaluateCase({
+      ...defaultCalculatorCase,
+      teamBuffs: {
+        ...defaultCalculatorCase.teamBuffs,
+        po_feng: {
+          ...defaultCalculatorCase.teamBuffs?.po_feng,
+          enabled: true,
+          coverage: 0,
+          stacks: 1,
+        },
+      },
+    });
+
+    expect(zeroCoverage.activeTeamBuffs).toEqual([]);
+    expectClose(zeroCoverage.dps, base.dps);
+  });
 });

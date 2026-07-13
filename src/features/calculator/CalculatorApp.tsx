@@ -13,6 +13,8 @@ import {
   type PanelInput,
   type RotationCounts,
   type SkillId,
+  type TeamBuffConfig,
+  type TeamBuffEffects,
 } from "../../core/tianceDps";
 
 const panelFields: Array<[keyof PanelInput, string]> = [
@@ -41,6 +43,27 @@ const globalFields: Array<[keyof GlobalEffects, string]> = [
   ["apGainAdd", "全局攻击增益"],
 ];
 
+const teamBuffEffectLabels: Record<keyof TeamBuffEffects, string> = {
+  flatApAdd: "固定攻击",
+  apGainAdd: "攻击增益",
+  critGainAdd: "会心",
+  overcomeGainAdd: "破防增益",
+  strainGainAdd: "无双",
+  ignoreDefPct: "无视防御",
+  skillKbGain: "B 乘区",
+  skillKcGain: "C 乘区",
+  skillKdGain: "目标易伤",
+};
+
+type ResultView = "panel" | "damage" | "details" | "weights";
+
+const resultViews: Array<[ResultView, string]> = [
+  ["panel", "最终面板"],
+  ["damage", "伤害占比"],
+  ["details", "技能明细"],
+  ["weights", "属性收益"],
+];
+
 function cloneCase(): GoldenCase {
   return {
     ...defaultCalculatorCase,
@@ -48,6 +71,16 @@ function cloneCase(): GoldenCase {
     counts: { ...defaultCalculatorCase.counts },
     aoxueWu: { ...defaultCalculatorCase.aoxueWu },
     globalEffects: { ...defaultCalculatorCase.globalEffects },
+    teamBuffDefinitions: { ...defaultCalculatorCase.teamBuffDefinitions },
+    teamBuffs: Object.fromEntries(
+      Object.entries(defaultCalculatorCase.teamBuffs ?? {}).map(([id, config]) => [
+        id,
+        {
+          ...config,
+          effects: { ...config.effects },
+        },
+      ]),
+    ),
   };
 }
 
@@ -74,11 +107,65 @@ function numberValue(value: unknown) {
   return Number.isFinite(Number(value)) ? Number(value) : 0;
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function mergeImportedCase(value: unknown): GoldenCase {
+  if (!isRecord(value)) {
+    throw new Error("方案 JSON 必须是对象。");
+  }
+
+  const base = cloneCase();
+  return {
+    ...base,
+    ...value,
+    panel: isRecord(value.panel) ? { ...base.panel, ...value.panel } : base.panel,
+    counts: isRecord(value.counts) ? { ...base.counts, ...value.counts } : base.counts,
+    targets: isRecord(value.targets) ? { ...base.targets, ...value.targets } : base.targets,
+    skills: isRecord(value.skills) ? { ...base.skills, ...value.skills } : base.skills,
+    aoxueWu: isRecord(value.aoxueWu) ? { ...base.aoxueWu, ...value.aoxueWu } : base.aoxueWu,
+    globalEffects: isRecord(value.globalEffects)
+      ? { ...base.globalEffects, ...value.globalEffects }
+      : base.globalEffects,
+    teamBuffDefinitions: isRecord(value.teamBuffDefinitions)
+      ? { ...base.teamBuffDefinitions, ...value.teamBuffDefinitions }
+      : base.teamBuffDefinitions,
+    teamBuffs: isRecord(value.teamBuffs) ? { ...base.teamBuffs, ...value.teamBuffs } : base.teamBuffs,
+  } as GoldenCase;
+}
+
 export function CalculatorApp() {
   const [caseInput, setCaseInput] = useState<GoldenCase>(() => cloneCase());
+  const [activeResultView, setActiveResultView] = useState<ResultView>("damage");
+  const [schemeText, setSchemeText] = useState("");
+  const [schemeError, setSchemeError] = useState("");
 
   const result = useMemo(() => evaluateCase(caseInput), [caseInput]);
   const statWeights = useMemo(() => estimateStatWeights(caseInput), [caseInput]);
+
+  const resetCase = () => {
+    const nextCase = cloneCase();
+    setCaseInput(nextCase);
+    setSchemeText("");
+    setSchemeError("");
+  };
+
+  const exportScheme = () => {
+    setSchemeText(JSON.stringify(caseInput, null, 2));
+    setSchemeError("");
+  };
+
+  const importScheme = () => {
+    try {
+      const nextCase = mergeImportedCase(JSON.parse(schemeText));
+      evaluateCase(nextCase);
+      setCaseInput(nextCase);
+      setSchemeError("");
+    } catch (error) {
+      setSchemeError(error instanceof Error ? error.message : "方案导入失败。");
+    }
+  };
 
   const updatePanel = (key: keyof PanelInput, value: number) => {
     setCaseInput((current) => ({
@@ -108,6 +195,46 @@ export function CalculatorApp() {
         [key]: value,
       },
     }));
+  };
+
+  const updateTeamBuff = (id: string, patch: Partial<TeamBuffConfig>) => {
+    setCaseInput((current) => ({
+      ...current,
+      teamBuffs: {
+        ...current.teamBuffs,
+        [id]: {
+          ...current.teamBuffs?.[id],
+          enabled: current.teamBuffs?.[id]?.enabled ?? false,
+          coverage: current.teamBuffs?.[id]?.coverage ?? 1,
+          stacks: current.teamBuffs?.[id]?.stacks ?? 1,
+          ...patch,
+        },
+      },
+    }));
+  };
+
+  const updateTeamBuffEffect = (id: string, key: keyof TeamBuffEffects, value: number) => {
+    setCaseInput((current) => {
+      const existing = current.teamBuffs?.[id];
+      const definition = current.teamBuffDefinitions?.[id];
+      return {
+        ...current,
+        teamBuffs: {
+          ...current.teamBuffs,
+          [id]: {
+            enabled: existing?.enabled ?? false,
+            coverage: existing?.coverage ?? 1,
+            stacks: existing?.stacks ?? 1,
+            ...existing,
+            effects: {
+              ...definition?.effects,
+              ...existing?.effects,
+              [key]: value,
+            },
+          },
+        },
+      };
+    });
   };
 
   const updateCount = (key: SkillId, value: number) => {
@@ -140,6 +267,7 @@ export function CalculatorApp() {
     ["无视后防御减伤", formatPercent(result.panel.defenseRateAfterIgnore)],
     ["目标防御", formatNumber(result.panel.targetDefense, 2)],
   ];
+  const teamBuffEntries = Object.entries(caseInput.teamBuffDefinitions ?? {});
 
   return (
     <main className="calculator-shell">
@@ -151,11 +279,11 @@ export function CalculatorApp() {
         <div className="result-metrics">
           <div className="metric primary">
             <span>DPS</span>
-            <strong>{formatWan(result.dps)}</strong>
+            <strong data-testid="metric-dps">{formatWan(result.dps)}</strong>
           </div>
           <div className="metric">
             <span>总伤害</span>
-            <strong>{formatWan(result.totalDamage)}</strong>
+            <strong data-testid="metric-total-damage">{formatWan(result.totalDamage)}</strong>
           </div>
           <div className="metric">
             <span>技能数</span>
@@ -164,12 +292,45 @@ export function CalculatorApp() {
         </div>
       </section>
 
+      <nav className="module-nav" aria-label="工作台模块">
+        <a href="#panel-config">面板</a>
+        <a href="#rotation-config">循环</a>
+        <a href="#buff-config">增益</a>
+        <a href="#result-views">结果</a>
+      </nav>
+
       <section className="workspace">
         <div className="inputs-column">
-          <section className="panel">
+          <section className="panel" id="scheme-config">
+            <div className="panel-title">
+              <h2>方案</h2>
+              <button type="button" onClick={resetCase}>
+                恢复默认
+              </button>
+            </div>
+            <div className="action-row">
+              <button type="button" onClick={exportScheme}>
+                导出
+              </button>
+              <button type="button" onClick={importScheme}>
+                导入
+              </button>
+            </div>
+            <label className="scheme-editor">
+              <span>方案 JSON</span>
+              <textarea
+                data-testid="scheme-json"
+                value={schemeText}
+                onChange={(event) => setSchemeText(event.target.value)}
+              />
+            </label>
+            {schemeError ? <p className="form-error">{schemeError}</p> : null}
+          </section>
+
+          <section className="panel" id="panel-config">
             <div className="panel-title">
               <h2>基础面板</h2>
-              <button type="button" onClick={() => setCaseInput(cloneCase())}>
+              <button type="button" onClick={resetCase}>
                 重置
               </button>
             </div>
@@ -187,7 +348,7 @@ export function CalculatorApp() {
             </div>
           </section>
 
-          <section className="panel">
+          <section className="panel" id="rotation-config">
             <h2>目标与循环</h2>
             <div className="field-grid compact">
               <label>
@@ -257,7 +418,7 @@ export function CalculatorApp() {
             </div>
           </section>
 
-          <section className="panel">
+          <section className="panel" id="buff-config">
             <h2>简化增益</h2>
             <div className="field-grid">
               {aoxueFields.map(([key, label]) => (
@@ -284,73 +445,207 @@ export function CalculatorApp() {
               ))}
             </div>
           </section>
+
+          <section className="panel">
+            <div className="panel-title">
+              <h2>团队增益</h2>
+              <button
+                type="button"
+                onClick={() => {
+                  setCaseInput((current) => ({
+                    ...current,
+                    teamBuffs: cloneCase().teamBuffs,
+                  }));
+                }}
+              >
+                恢复默认
+              </button>
+            </div>
+            <div className="active-buffs" data-testid="active-team-buffs">
+              {result.activeTeamBuffs.length > 0
+                ? result.activeTeamBuffs.map((buff) => (
+                    <span key={buff.id}>{buff.label}</span>
+                  ))
+                : <span>未启用</span>}
+            </div>
+            <div className="buff-list">
+              {teamBuffEntries.map(([id, definition]) => {
+                const config = caseInput.teamBuffs?.[id];
+                const effects = config?.effects ?? definition.effects;
+                return (
+                  <section className="buff-item" key={id}>
+                    <label className="buff-toggle">
+                      <input
+                        type="checkbox"
+                        checked={config?.enabled ?? false}
+                        onChange={(event) => updateTeamBuff(id, { enabled: event.target.checked })}
+                      />
+                      <span>{definition.label}</span>
+                    </label>
+                    <p>{definition.description}</p>
+                    <div className="field-grid compact">
+                      <label>
+                        <span>覆盖率</span>
+                        <input
+                          type="number"
+                          min="0"
+                          max="1"
+                          step="0.05"
+                          value={numberValue(config?.coverage ?? 1)}
+                          onChange={(event) => updateTeamBuff(id, { coverage: Number(event.target.value) })}
+                        />
+                      </label>
+                      <label>
+                        <span>层数</span>
+                        <input
+                          type="number"
+                          min="0"
+                          max={definition.maxStacks}
+                          value={numberValue(config?.stacks ?? 1)}
+                          onChange={(event) => updateTeamBuff(id, { stacks: Number(event.target.value) })}
+                        />
+                      </label>
+                      {Object.entries(effects).map(([key, value]) => (
+                        <label key={key}>
+                          <span>{teamBuffEffectLabels[key as keyof TeamBuffEffects]}</span>
+                          <input
+                            type="number"
+                            step="0.01"
+                            value={numberValue(value)}
+                            onChange={(event) => {
+                              updateTeamBuffEffect(
+                                id,
+                                key as keyof TeamBuffEffects,
+                                Number(event.target.value),
+                              );
+                            }}
+                          />
+                        </label>
+                      ))}
+                    </div>
+                  </section>
+                );
+              })}
+            </div>
+          </section>
         </div>
 
-        <div className="outputs-column">
-          <section className="panel">
-            <h2>最终面板</h2>
-            <div className="panel-grid">
-              {panelSummary.map(([label, value]) => (
-                <div className="kv" key={label}>
-                  <span>{label}</span>
-                  <strong>{value}</strong>
-                </div>
+        <div className="outputs-column" id="result-views">
+          <section className="panel result-tabs-panel">
+            <div className="result-tabs" role="tablist" aria-label="结果视图">
+              {resultViews.map(([view, label]) => (
+                <button
+                  type="button"
+                  key={view}
+                  aria-selected={activeResultView === view}
+                  onClick={() => setActiveResultView(view)}
+                >
+                  {label}
+                </button>
               ))}
             </div>
           </section>
 
-          <section className="panel">
-            <h2>技能伤害占比</h2>
-            <div className="table-wrap">
-              <table>
-                <thead>
-                  <tr>
-                    <th>技能</th>
-                    <th>次数</th>
-                    <th>总伤害</th>
-                    <th>占比</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {result.breakdown.map((row) => (
-                    <tr key={row.skill}>
-                      <td>{skillLabel(row.skill)}</td>
-                      <td>{row.count}</td>
-                      <td>{formatWan(row.total)}</td>
-                      <td className="ratio-cell">
-                        <span>{formatPercent(row.ratio)}</span>
-                        <i style={{ width: `${Math.min(100, row.ratio * 100)}%` }} />
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </section>
+          {activeResultView === "panel" ? (
+            <section className="panel" data-testid="panel-view">
+              <h2>最终面板</h2>
+              <div className="panel-grid">
+                {panelSummary.map(([label, value]) => (
+                  <div className="kv" key={label}>
+                    <span>{label}</span>
+                    <strong>{value}</strong>
+                  </div>
+                ))}
+              </div>
+            </section>
+          ) : null}
 
-          <section className="panel">
-            <h2>属性收益</h2>
-            <div className="table-wrap">
-              <table>
-                <thead>
-                  <tr>
-                    <th>属性</th>
-                    <th>每点 DPS</th>
-                    <th>预算后 DPS</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {statWeights.map((row) => (
-                    <tr key={row.stat}>
-                      <td>{row.label}</td>
-                      <td>{formatNumber(row.deltaDps, 4)}</td>
-                      <td>{formatNumber(row.scaledDeltaDps, 4)}</td>
+          {activeResultView === "damage" ? (
+            <section className="panel" data-testid="damage-view">
+              <h2>技能伤害占比</h2>
+              <div className="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>技能</th>
+                      <th>次数</th>
+                      <th>总伤害</th>
+                      <th>占比</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </section>
+                  </thead>
+                  <tbody>
+                    {result.breakdown.map((row) => (
+                      <tr key={row.skill}>
+                        <td>{skillLabel(row.skill)}</td>
+                        <td>{row.count}</td>
+                        <td>{formatWan(row.total)}</td>
+                        <td className="ratio-cell">
+                          <span>{formatPercent(row.ratio)}</span>
+                          <i style={{ width: `${Math.min(100, row.ratio * 100)}%` }} />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          ) : null}
+
+          {activeResultView === "details" ? (
+            <section className="panel" data-testid="details-view">
+              <h2>技能明细</h2>
+              <div className="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>技能</th>
+                      <th>次数</th>
+                      <th>非会心</th>
+                      <th>会心</th>
+                      <th>总伤害</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {result.breakdown.map((row) => (
+                      <tr key={row.skill}>
+                        <td>{skillLabel(row.skill)}</td>
+                        <td>{row.count}</td>
+                        <td>{formatWan(row.noncrit)}</td>
+                        <td>{formatWan(row.crit)}</td>
+                        <td>{formatWan(row.total)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          ) : null}
+
+          {activeResultView === "weights" ? (
+            <section className="panel" data-testid="weights-view">
+              <h2>属性收益</h2>
+              <div className="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>属性</th>
+                      <th>每点 DPS</th>
+                      <th>预算后 DPS</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {statWeights.map((row) => (
+                      <tr key={row.stat}>
+                        <td>{row.label}</td>
+                        <td>{formatNumber(row.deltaDps, 4)}</td>
+                        <td>{formatNumber(row.scaledDeltaDps, 4)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          ) : null}
         </div>
       </section>
     </main>
